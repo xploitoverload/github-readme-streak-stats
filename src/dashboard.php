@@ -73,6 +73,10 @@ function renderDashboard(array $stats, array $activity = [], array $params = [])
     $maxVal = max($activityValues);
     $yScale = max(10, (int) (ceil($maxVal / 100.0) * 100));
     $halfScale = (int) ($yScale / 2);
+    $chartLabelX = (int) ($chartLeft - 6);
+    $xJul2025 = round($chartLeft + $chartWidth * 0.3, 1);
+    $xYear2026 = round($chartLeft + $chartWidth * 0.6, 1);
+    $xJul2026 = round($chartLeft + $chartWidth * 0.88, 1);
 
     // Calculate curve points
     $chartPoints = [];
@@ -291,8 +295,8 @@ function renderDashboard(array $stats, array $activity = [], array $params = [])
 
         <!-- Chart Y-Axis Labels -->
         <text x='{$chartLeft}' y='84' class='axis-label' text-anchor='start'>{$yScale}</text>
-        <text x='" . ($chartLeft - 6) . "' y='198' class='axis-label' text-anchor='end'>{$halfScale}</text>
-        <text x='" . ($chartLeft - 6) . "' y='303' class='axis-label' text-anchor='end'>0</text>
+        <text x='{$chartLabelX}' y='198' class='axis-label' text-anchor='end'>{$halfScale}</text>
+        <text x='{$chartLabelX}' y='303' class='axis-label' text-anchor='end'>0</text>
 
         <!-- Shaded Activity Area -->
         <path class='graph-area' d='{$chartAreaPath}' fill='url(#activity-fill-grad)' opacity='0'/>
@@ -305,9 +309,9 @@ function renderDashboard(array $stats, array $activity = [], array $params = [])
 
         <!-- Chart X-Axis Labels -->
         <text x='{$chartLeft}' y='318' class='axis-label'>2025</text>
-        <text x='" . ($chartLeft + $chartWidth * 0.3) . "' y='318' class='axis-label'>Jul</text>
-        <text x='" . ($chartLeft + $chartWidth * 0.6) . "' y='318' class='axis-label'>2026</text>
-        <text x='" . ($chartLeft + $chartWidth * 0.88) . "' y='318' class='axis-label'>Jul</text>
+        <text x='{$xJul2025}' y='318' class='axis-label'>Jul</text>
+        <text x='{$xYear2026}' y='318' class='axis-label'>2026</text>
+        <text x='{$xJul2026}' y='318' class='axis-label'>Jul</text>
     </g>
 </svg>
 SVG;

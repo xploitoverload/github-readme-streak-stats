@@ -66,6 +66,9 @@ jobs:
           # 7. Self-Hosted GitHub Dashboard (Telemetry & Activity Chart)
           php bin/generate-dashboard.php --user="xploitoverload" --path="build/dashboard.svg"
 
+          # 8. Flagship King Cobra Strike Protocol (Articulated Serpentine Predator & Fancy Meals)
+          php bin/generate-king-cobra.php --user="xploitoverload" --path="build/king-cobra.svg"
+
       - name: Generate Landing Page
         run: |
           cat << 'EOF' > build/index.html
@@ -149,7 +152,13 @@ jobs:
             
             <div class="card-container">
               <div class="card-box featured">
-                <h3>[0x00] GitHub System Dashboard <span class="badge">SELF-HOSTED PLATFORM</span></h3>
+                <h3>[0x00] King Cobra Strike Protocol <span class="badge">AUTONOMOUS PREDATOR</span></h3>
+                <img class="streak-card" src="king-cobra.svg" alt="King Cobra Strike Protocol">
+                <div class="code-block">[![King Cobra Strike](https://xploitoverload.github.io/github-readme-streak-stats/king-cobra.svg)](https://github.com/xploitoverload)</div>
+              </div>
+
+              <div class="card-box featured">
+                <h3>[0x01] GitHub System Dashboard <span class="badge">SELF-HOSTED PLATFORM</span></h3>
                 <img class="streak-card" src="dashboard.svg" alt="GitHub System Dashboard">
                 <div class="code-block">[![GitHub Dashboard](https://xploitoverload.github.io/github-readme-streak-stats/dashboard.svg)](https://github.com/xploitoverload)</div>
               </div>

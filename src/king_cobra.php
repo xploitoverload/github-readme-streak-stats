@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 /**
  * Generate a standalone animated SVG of the King Cobra Contribution Predator.
- * Renders the user's authentic contribution calendar matrix without extraneous banners,
- * where a thick, realistic, hooded King Cobra glides in a majestic flowing prowl,
- * devours fancy glowing meals, visibly grows longer and bigger as it feeds,
- * and leaves cleanly emptied contribution cells in its wake.
+ * Renders the user's authentic contribution calendar matrix without extraneous text banners,
+ * where an authentic, hooded, banded King Cobra glides horizontally along each row
+ * with zero vertical wobble, eating and completely emptying every single active contribution box
+ * until the entire board is 100% cleared.
  *
  * @param array<int,array{date:string,count:int,level:int}> $days Array of daily contributions
  * @param array<string,mixed> $params Options
@@ -15,468 +15,298 @@ declare(strict_types=1);
  */
 function renderKingCobra(array $days, array $params = []): string
 {
-    $cellWidth = 11;
-    $cellGap = 4;
-    $step = $cellWidth + $cellGap; // 15px
-    $gridX0 = 36;
-    $gridY0 = 26;
+    $cell = 16;
+    $cellSize = 12;
+    $gridX0 = 32;
+    $gridY0 = 32;
 
-    $svgWidth = 875;
-    $svgHeight = 160;
+    $svgWidth = 890;
+    $svgHeight = 175;
+    $duration = 24.0; // 24 seconds per complete sweep
 
-    // Catmull-Rom spline interpolation
-    $catmullRom = function (array $p0, array $p1, array $p2, array $p3, float $t): array {
-        $t2 = $t * $t;
-        $t3 = $t2 * $t;
-        $x = 0.5 * ((2 * $p1[0]) +
-                   (-$p0[0] + $p2[0]) * $t +
-                   (2 * $p0[0] - 5 * $p1[0] + 4 * $p2[0] - $p3[0]) * $t2 +
-                   (-$p0[0] + 3 * $p1[0] - 3 * $p2[0] + $p3[0]) * $t3);
-        $y = 0.5 * ((2 * $p1[1]) +
-                   (-$p0[1] + $p2[1]) * $t +
-                   (2 * $p0[1] - 5 * $p1[1] + 4 * $p2[1] - $p3[1]) * $t2 +
-                   (-$p0[1] + 3 * $p1[1] - 3 * $p2[1] + $p3[1]) * $t3);
-        return [$x, $y];
-    };
-
-    // Majestic flowing prowl path (continuous natural serpentine sweeps, no frantic up-and-down)
-    $waypointsGrid = [
-        // Top sweep across cols 0 -> 52 along rows 1.5 - 2.0
-        [1.0, 1.8], [8.0, 1.5], [16.0, 2.0], [24.0, 1.6], [32.0, 2.0], [40.0, 1.6], [46.0, 2.0], [50.0, 1.8],
-        // Wide majestic turnaround at right edge
-        [52.5, 2.8], [53.0, 4.0], [51.0, 5.2],
-        // Bottom sweep across cols 50 -> 0 along rows 4.6 - 5.0
-        [46.0, 5.0], [38.0, 4.6], [30.0, 5.0], [22.0, 4.6], [14.0, 5.0], [6.0, 4.6], [2.0, 5.0],
-        // Wide majestic turnaround at left edge
-        [0.0, 4.2], [-0.5, 2.8], [1.0, 1.8],
+    // Orthogonal 7-row serpentine sweep:
+    // Snake has 8 segments (head s0 + body s1..s7).
+    // Approach: head starts at (-8 * cell, 0) and glides into col 0 along row 0.
+    $pathSegments = [
+        // Approach row 0
+        [-8 * $cell, 0, 0, 0, 0],
+        // Row 0: right (cols 0 -> 52)
+        [0, 0, 52 * $cell, 0, 0],
+        [52 * $cell, 0, 52 * $cell, 1 * $cell, 90],
+        // Row 1: left (cols 52 -> 0)
+        [52 * $cell, 1 * $cell, 0, 1 * $cell, 180],
+        [0, 1 * $cell, 0, 2 * $cell, 90],
+        // Row 2: right (cols 0 -> 52)
+        [0, 2 * $cell, 52 * $cell, 2 * $cell, 0],
+        [52 * $cell, 2 * $cell, 52 * $cell, 3 * $cell, 90],
+        // Row 3: left (cols 52 -> 0)
+        [52 * $cell, 3 * $cell, 0, 3 * $cell, 180],
+        [0, 3 * $cell, 0, 4 * $cell, 90],
+        // Row 4: right (cols 0 -> 52)
+        [0, 4 * $cell, 52 * $cell, 4 * $cell, 0],
+        [52 * $cell, 4 * $cell, 52 * $cell, 5 * $cell, 90],
+        // Row 5: left (cols 52 -> 0)
+        [52 * $cell, 5 * $cell, 0, 5 * $cell, 180],
+        [0, 5 * $cell, 0, 6 * $cell, 90],
+        // Row 6: right (cols 0 -> 52)
+        [0, 6 * $cell, 52 * $cell, 6 * $cell, 0],
+        // Exit off right edge of row 6
+        [52 * $cell, 6 * $cell, 60 * $cell, 6 * $cell, 0],
     ];
 
-    $waypoints = [];
-    foreach ($waypointsGrid as $wg) {
-        $waypoints[] = [$gridX0 + $wg[0] * $step, $gridY0 + $wg[1] * $step];
+    $activeDist = 0;
+    foreach ($pathSegments as $seg) {
+        $activeDist += abs($seg[2] - $seg[0]) + abs($seg[3] - $seg[1]);
     }
 
-    $numWp = count($waypoints) - 1;
-    $stepsPerSeg = 6;
-    $rawPoints = [];
+    // 92% active sweep time, 8% loop reset interval
+    $totalDist = $activeDist / 0.92;
 
-    for ($i = 0; $i < $numWp; $i++) {
-        $p0 = $waypoints[($i - 1 + $numWp) % $numWp];
-        $p1 = $waypoints[$i];
-        $p2 = $waypoints[($i + 1) % $numWp];
-        $p3 = $waypoints[($i + 2) % $numWp];
-        for ($s = 0; $s < $stepsPerSeg; $s++) {
-            $t = $s / (float) $stepsPerSeg;
-            $rawPoints[] = $catmullRom($p0, $p1, $p2, $p3, $t);
+    $timedSegments = [];
+    $cum = 0.0;
+    foreach ($pathSegments as $seg) {
+        $d = abs($seg[2] - $seg[0]) + abs($seg[3] - $seg[1]);
+        $t1 = round(($cum / (float) $totalDist) * 100.0, 3);
+        $cum += $d;
+        $t2 = round(($cum / (float) $totalDist) * 100.0, 3);
+        $timedSegments[] = [
+            'x1' => $seg[0],
+            'y1' => $seg[1],
+            'x2' => $seg[2],
+            'y2' => $seg[3],
+            't1' => $t1,
+            't2' => $t2,
+            'ang' => $seg[4],
+        ];
+    }
+
+    // Calculate transit/eat timestamp for every grid cell (col, row)
+    $cellEatTimes = [];
+    for ($r = 0; $r < 7; $r++) {
+        $segIdx = 1 + $r * 2;
+        $seg = $timedSegments[$segIdx];
+        $isLeftToRight = ($r % 2 === 0);
+        for ($c = 0; $c < 53; $c++) {
+            $frac = $isLeftToRight ? ($c / 52.0) : ((52 - $c) / 52.0);
+            $tCell = round($seg['t1'] + $frac * ($seg['t2'] - $seg['t1']), 2);
+            $cellEatTimes["{$c}_{$r}"] = $tCell;
         }
     }
 
-    $totalFrames = count($rawPoints);
-    $trajectory = [];
+    // Build King Cobra @keyframes
+    $kfLines = ["@keyframes cobraMove {"];
+    foreach ($timedSegments as $seg) {
+        $x1 = $seg['x1'];
+        $y1 = $seg['y1'];
+        $x2 = $seg['x2'];
+        $y2 = $seg['y2'];
+        $ang = $seg['ang'];
+        $rot = "rotate({$ang}deg)";
+        $kfLines[] = "  {$seg['t1']}% { transform: translate({$x1}px, {$y1}px) {$rot}; }";
+        $kfLines[] = "  {$seg['t2']}% { transform: translate({$x2}px, {$y2}px) {$rot}; }";
+    }
+    // Hold offscreen during reset
+    $kfLines[] = "  92.1%, 100% { transform: translate(-128px, 0px) rotate(0deg); }";
+    $kfLines[] = "}";
+    $cobraMoveKf = implode("\n", $kfLines);
 
-    // Calculate heading angle and fluid lateral slither wave
-    for ($i = 0; $i < $totalFrames; $i++) {
-        $curr = $rawPoints[$i];
-        $next = $rawPoints[($i + 1) % $totalFrames];
-        $dx = $next[0] - $curr[0];
-        $dy = $next[1] - $curr[1];
-        $angle = rad2deg(atan2($dy, $dx));
-
-        // Lateral slither wave (8 undulation cycles)
-        $waveAngle = 2 * M_PI * ($i / (float) $totalFrames) * 8;
-        $slitherOffset = sin($waveAngle) * 3.2;
-
-        $dist = hypot($dx, $dy);
-        if ($dist > 0.001) {
-            $perpX = (-$dy / $dist) * $slitherOffset;
-            $perpY = ($dx / $dist) * $slitherOffset;
-        } else {
-            $perpX = 0.0;
-            $perpY = 0.0;
-        }
-
-        $x = $curr[0] + $perpX;
-        $y = $curr[1] + $perpY;
-        $headSway = cos($waveAngle) * 6.0;
-        $totalAngle = $angle + $headSway;
-
-        $trajectory[] = [round($x, 1), round($y, 1), round($totalAngle, 1)];
+    // Follow-the-leader animation delay for 8 body segments
+    $stepTime = ($duration * 0.92) / (float) ($activeDist / $cell);
+    $numSegments = 8;
+    $sRules = [];
+    for ($s = 0; $s < $numSegments; $s++) {
+        $phase = round(fmod($duration - $s * $stepTime, $duration), 4);
+        $sRules[] = ".s{$s} { transform-origin: 8px 8px; animation: cobraMove {$duration}s linear infinite -{$phase}s; }";
     }
 
-    // Identify all active meals eaten and emptied along the Cobra's path
-    $eatenCells = [];
-    foreach ($trajectory as $frameIdx => $tPos) {
-        $pct = round(($frameIdx / (float) $totalFrames) * 100, 2);
-        [$px, $py] = [$tPos[0], $tPos[1]];
-
-        foreach ($days as $i => $d) {
-            $c = (int) ($i / 7);
-            $r = $i % 7;
-            if ($c > 52 || ($d["level"] ?? 0) === 0) {
-                continue;
-            }
-            $cx = $gridX0 + $c * $step + 5.5;
-            $cy = $gridY0 + $r * $step + 5.5;
-            $dist = hypot($px - $cx, $py - $cy);
-            $mid = "meal_{$c}_{$r}";
-            if ($dist <= 12.0 && !isset($eatenCells[$mid])) {
-                $eatenCells[$mid] = [$pct, $cx, $cy];
-            }
-        }
-    }
-
-    // 14 Vertebrae Segments with Progressive Growth (Getting bigger like flow!)
-    $numSegments = 14;
-    $growthTimes = [
-        7 => 18.0,
-        8 => 24.0,
-        9 => 38.0,
-        10 => 45.0,
-        11 => 58.0,
-        12 => 66.0,
-        13 => 76.0,
-        14 => 82.0,
+    // Contribution cell styling: 100% eating and emptying
+    $levelColors = [
+        0 => "#161b22",
+        1 => "#0e4429",
+        2 => "#006d32",
+        3 => "#26a641",
+        4 => "#39d353",
     ];
 
-    $cssParts = [];
-
-    // 1. King Cobra Head Motion Keyframes
-    $headKf = ["@keyframes cobraHeadMove {"];
-    for ($i = 0; $i <= $totalFrames; $i++) {
-        $pct = round(($i / (float) $totalFrames) * 100, 2);
-        $idx = $i % $totalFrames;
-        [$x, $y, $ang] = $trajectory[$idx];
-        $headKf[] = "  {$pct}% { transform: translate({$x}px, {y}px) rotate({$ang}deg); }";
-    }
-    $headKf[] = "}";
-    $cssParts[] = implode("\n", $headKf);
-
-    // 2. Trailing Vertebrae / Body Segments Keyframes with Dynamic Growth
-    for ($seg = 1; $seg <= $numSegments; $seg++) {
-        $segKf = ["@keyframes cobraSeg{$seg}Move {"];
-        $delayFrames = (int) round($seg * 1.3);
-        $tGrow = $growthTimes[$seg] ?? 0.0;
-
-        for ($i = 0; $i <= $totalFrames; $i++) {
-            $pct = round(($i / (float) $totalFrames) * 100, 2);
-            $idx = ($i - $delayFrames + $totalFrames * 10) % $totalFrames;
-            [$x, $y, $ang] = $trajectory[$idx];
-
-            if ($tGrow > 0) {
-                if ($pct < $tGrow - 1.0) {
-                    $segKf[] = "  {$pct}% { transform: translate({$x}px, {$y}px) rotate({$ang}deg) scale(0.01); opacity: 0; }";
-                } elseif ($pct < $tGrow) {
-                    $scaleVal = round($pct - ($tGrow - 1.0), 2);
-                    $segKf[] = "  {$pct}% { transform: translate({$x}px, {$y}px) rotate({$ang}deg) scale({$scaleVal}); opacity: {$scaleVal}; }";
-                } elseif ($pct <= 99.4) {
-                    $segKf[] = "  {$pct}% { transform: translate({$x}px, {$y}px) rotate({$ang}deg) scale(1); opacity: 1; }";
-                } else {
-                    $segKf[] = "  {$pct}% { transform: translate({$x}px, {$y}px) rotate({$ang}deg) scale(0.01); opacity: 0; }";
-                }
-            } else {
-                $segKf[] = "  {$pct}% { transform: translate({$x}px, {$y}px) rotate({$ang}deg); opacity: 1; }";
-            }
-        }
-        $segKf[] = "}";
-        $cssParts[] = implode("\n", $segKf);
-    }
-
-    // 3. Devour & Emptying Keyframes for Eaten Meals
-    foreach ($eatenCells as $mid => $info) {
-        [$t0, $cx, $cy] = $info;
-        $tBurst = round(min(100.0, $t0 + 0.3), 2);
-        $tEmpty = round(min(100.0, $t0 + 0.7), 2);
-        $cssParts[] = <<<CSS
-        @keyframes eat_{$mid} {
-            0%, {$t0}% { opacity: 1; transform: scale(1); }
-            {$tBurst}% { opacity: 1; transform: scale(1.5); filter: brightness(2.5) drop-shadow(0 0 5px #ff0055); }
-            {$tEmpty}%, 99.4% { opacity: 0; transform: scale(0); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-        #{$mid} {
-            animation: eat_{$mid} 20s ease-in-out infinite;
-            transform-origin: {$cx}px {$cy}px;
-        }
-CSS;
-    }
-
-    // Month Labels
-    $months = ["Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov"];
-    $monthSvg = [];
-    foreach ($months as $i => $m) {
-        $col = (int) round($i * (52.0 / 12.0));
-        $mx = $gridX0 + $col * $step;
-        $monthSvg[] = "<text x='{$mx}' y='16' fill='#8b949e' font-size='9' font-family='-apple-system,BlinkMacSystemFont,\"Segoe UI\",Helvetica,Arial,sans-serif'>{$m}</text>";
-    }
-
-    // Weekday Labels
-    $wMonY = $gridY0 + 1 * $step + 9;
-    $wWedY = $gridY0 + 3 * $step + 9;
-    $wFriY = $gridY0 + 5 * $step + 9;
-    $wLabelX = $gridX0 - 6;
-    $weekdaySvg = [
-        "<text x='{$wLabelX}' y='{$wMonY}' fill='#8b949e' font-size='9' font-family='-apple-system,BlinkMacSystemFont,\"Segoe UI\",Helvetica,Arial,sans-serif' text-anchor='end'>Mon</text>",
-        "<text x='{$wLabelX}' y='{$wWedY}' fill='#8b949e' font-size='9' font-family='-apple-system,BlinkMacSystemFont,\"Segoe UI\",Helvetica,Arial,sans-serif' text-anchor='end'>Wed</text>",
-        "<text x='{$wLabelX}' y='{$wFriY}' fill='#8b949e' font-size='9' font-family='-apple-system,BlinkMacSystemFont,\"Segoe UI\",Helvetica,Arial,sans-serif' text-anchor='end'>Fri</text>",
-    ];
-
-    // Grid Cells & Meals (with base empty tile underneath so emptied cells reveal the empty base)
-    $cellsSvg = [];
+    $cellCss = [];
+    $cellRects = [];
     foreach ($days as $i => $d) {
-        $col = (int) ($i / 7);
+        $col = intdiv($i, 7);
         $row = $i % 7;
         if ($col > 52) {
             break;
         }
-        $cx = $gridX0 + $col * $step;
-        $cy = $gridY0 + $row * $step;
-        $lvl = $d["level"] ?? 0;
-        $mid = "meal_{$col}_{$row}";
+        $cx = $col * $cell;
+        $cy = $row * $cell;
+        $lvl = intval($d['level'] ?? 0);
+        $cid = "c_{$col}_{$row}";
 
-        // Always render base background cell
-        $cellsSvg[] = "<rect x='{$cx}' y='{$cy}' width='{$cellWidth}' height='{$cellWidth}' rx='2.5' fill='#161b22' stroke='#21262d' stroke-width='0.6'/>";
+        if ($lvl > 0) {
+            $tEat = $cellEatTimes["{$col}_{$row}"] ?? 50.0;
+            $tFlash = round(min(100.0, $tEat + 0.1), 2);
+            $tEmpty = round($tFlash + 0.05, 2);
+            $activeColor = $levelColors[$lvl] ?? "#006d32";
 
-        $cxMid = $cx + 5.5;
-        $cyMid = $cy + 5.5;
-
-        if ($lvl === 1) {
-            $cellsSvg[] = "<g id='{$mid}'>
-                <rect x='{$cx}' y='{$cy}' width='{$cellWidth}' height='{$cellWidth}' rx='2.5' fill='#0e4429' stroke='#00ff88' stroke-width='0.6'/>
-                <circle cx='{$cxMid}' cy='{$cyMid}' r='2.5' fill='#00ff88' class='orb-pulse'/>
-            </g>";
-        } elseif ($lvl === 2) {
-            $cellsSvg[] = "<g id='{$mid}'>
-                <rect x='{$cx}' y='{$cy}' width='{$cellWidth}' height='{$cellWidth}' rx='2.5' fill='#003820' stroke='#00f5ff' stroke-width='0.8'/>
-                <circle cx='{$cxMid}' cy='{$cyMid}' r='3' fill='#00f5ff' class='orb-pulse-cyan'/>
-                <circle cx='{$cxMid}' cy='{$cyMid}' r='4.5' fill='none' stroke='#00f5ff' stroke-width='0.5' stroke-dasharray='1.5,1.5'/>
-            </g>";
-        } elseif ($lvl === 3) {
-            $cellsSvg[] = "<g id='{$mid}'>
-                <rect x='{$cx}' y='{$cy}' width='{$cellWidth}' height='{$cellWidth}' rx='2.5' fill='#1f1a3a' stroke='#c084fc' stroke-width='0.8'/>
-                <circle cx='{$cxMid}' cy='{$cyMid}' r='3.2' fill='#c084fc' class='orb-pulse-purple'/>
-                <circle cx='{$cxMid}' cy='{$cyMid}' r='4.8' fill='none' stroke='#f43f5e' stroke-width='0.6'/>
-            </g>";
-        } elseif ($lvl === 4) {
-            $cellsSvg[] = "<g id='{$mid}'>
-                <rect x='{$cx}' y='{$cy}' width='{$cellWidth}' height='{$cellWidth}' rx='2.5' fill='#2d1500' stroke='#ffd700' stroke-width='1'/>
-                <circle cx='{$cxMid}' cy='{$cyMid}' r='3.8' fill='#ffd700' class='orb-pulse-gold'/>
-                <circle cx='{$cxMid}' cy='{$cyMid}' r='5.2' fill='none' stroke='#ff3344' stroke-width='0.8' stroke-dasharray='2,1.5'/>
-            </g>";
+            $cellCss[] = "
+            @keyframes kf_{$cid} {
+                0%, {$tEat}% { fill: {$activeColor}; opacity: 1; }
+                {$tFlash}% { fill: #39d353; opacity: 1; }
+                {$tEmpty}%, 99.4% { fill: #161b22; opacity: 0.35; }
+                100% { fill: {$activeColor}; opacity: 1; }
+            }
+            .{$cid} { fill: {$activeColor}; animation: kf_{cid} {$duration}s linear infinite; }
+            ";
+            $cellRects[] = "<rect class='c {$cid}' x='" . ($cx + 2) . "' y='" . ($cy + 2) . "' width='{$cellSize}' height='{$cellSize}' rx='2.5' ry='2.5'/>";
+        } else {
+            $cellRects[] = "<rect class='c' x='" . ($cx + 2) . "' y='" . ($cy + 2) . "' width='{$cellSize}' height='{$cellSize}' rx='2.5' ry='2.5' fill='#161b22' opacity='0.35'/>";
         }
     }
 
-    // 14 Muscular Banded Segments (Heavy overlap, thick serpent flow)
-    $segRadii = [
-        [12.0, 9.5], // 1 (Neck)
-        [11.5, 9.0], // 2
-        [11.0, 8.5], // 3
-        [10.5, 8.2], // 4
-        [10.0, 8.0], // 5
-        [9.5, 7.8],  // 6
-        [9.0, 7.5],  // 7
-        [8.5, 7.0],  // 8
-        [8.0, 6.5],  // 9
-        [7.5, 6.0],  // 10
-        [7.0, 5.5],  // 11
-        [6.2, 5.0],  // 12
-        [5.5, 4.4],  // 13
-        [4.5, 3.6],  // 14 (Rattle Tail)
+    // Month labels
+    $months = ["Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov"];
+    $monthSvg = [];
+    foreach ($months as $i => $m) {
+        $col = (int) round($i * (52.0 / 12.0));
+        $mx = $gridX0 + $col * $cell;
+        $my = $gridY0 - 10;
+        $monthSvg[] = "<text x='{$mx}' y='{$my}' fill='#8b949e' font-size='9' font-family='-apple-system,BlinkMacSystemFont,\"Segoe UI\",Helvetica,Arial,sans-serif'>{$m}</text>";
+    }
+
+    // Weekday labels
+    $weekdaySvg = [
+        "<text x='" . ($gridX0 - 6) . "' y='" . ($gridY0 + 1 * $cell + 10) . "' fill='#8b949e' font-size='9' font-family='-apple-system,BlinkMacSystemFont,\"Segoe UI\",Helvetica,Arial,sans-serif' text-anchor='end'>Mon</text>",
+        "<text x='" . ($gridX0 - 6) . "' y='" . ($gridY0 + 3 * $cell + 10) . "' fill='#8b949e' font-size='9' font-family='-apple-system,BlinkMacSystemFont,\"Segoe UI\",Helvetica,Arial,sans-serif' text-anchor='end'>Wed</text>",
+        "<text x='" . ($gridX0 - 6) . "' y='" . ($gridY0 + 5 * $cell + 10) . "' fill='#8b949e' font-size='9' font-family='-apple-system,BlinkMacSystemFont,\"Segoe UI\",Helvetica,Arial,sans-serif' text-anchor='end'>Fri</text>",
     ];
 
-    $segmentsSvg = [];
-    for ($sIdx = $numSegments; $sIdx >= 1; $sIdx--) {
-        [$rx, $ry] = $segRadii[$sIdx - 1];
-        $isTail = ($sIdx === $numSegments);
-        $isBanded = ($sIdx % 2 === 0);
+    // Real King Cobra Head
+    $cobraHead = <<<HEAD
+    <g class='s s0'>
+        <!-- Flared Hood Body (Olive & Deep Forest Scales) -->
+        <path d='M 1,2 C 4,-2 9,-2 13,1 C 15,4 17,6 19,8 C 17,10 15,12 13,15 C 9,18 4,18 1,14 C -1,10 -1,6 1,2 Z' fill='#134e4a' stroke='#0f766e' stroke-width='1.2'/>
+        
+        <!-- King Cobra Dorsal Spectacle Chevron marking -->
+        <path d='M 4,5 Q 8,8 4,11 M 7,6 Q 9,8 7,10' fill='none' stroke='#ffd700' stroke-width='1.3' stroke-linecap='round'/>
+        <circle cx='8' cy='8' r='1' fill='#ffd700'/>
 
-        $bandSvg = "";
-        if ($isBanded && !$isTail) {
-            $bandX = -$rx * 0.5;
-            $bandY = $ry * 0.75;
-            $negBandY = -$ry * 0.75;
-            $bandSvg = "<path d='M {$bandX}, {$negBandY} Q 0,0 {$bandX}, {$bandY}' fill='none' stroke='#ffd700' stroke-width='2' stroke-linecap='round'/>";
-        }
+        <!-- Predatory Snake Eyes with amber iris & black vertical slit pupil -->
+        <circle cx='13' cy='5.5' r='1.8' fill='#f59e0b'/>
+        <circle cx='13' cy='10.5' r='1.8' fill='#f59e0b'/>
+        <line x1='13' y1='4.2' x2='13' y2='6.8' stroke='#000000' stroke-width='1' stroke-linecap='round'/>
+        <line x1='13' y1='9.2' x2='13' y2='11.8' stroke='#000000' stroke-width='1' stroke-linecap='round'/>
 
-        if ($isTail) {
-            $negRx = -$rx;
-            $p2X = -$rx - 7;
-            $p3X = -$rx - 10;
-            $segmentsSvg[] = "<g id='cobra-seg-{$sIdx}' class='cobra-seg-{$sIdx}'>
-                <ellipse cx='0' cy='0' rx='{$rx}' ry='{$ry}' fill='url(#segGrad)' stroke='#ffd700' stroke-width='0.9'/>
-                <polygon points='{$negRx},0 {$p2X},-2.5 {$p3X},0 {$p2X},2.5' fill='#ffd700' stroke='#ff3344' stroke-width='0.6'/>
-            </g>";
-        } else {
-            $spineX1 = -$rx * 0.6;
-            $spineX2 = $rx * 0.6;
-            $segmentsSvg[] = "<g id='cobra-seg-{$sIdx}' class='cobra-seg-{$sIdx}'>
-                <ellipse cx='0' cy='0' rx='{$rx}' ry='{$ry}' fill='url(#segGrad)' stroke='#ff3344' stroke-width='0.9'/>
-                {$bandSvg}
-                <line x1='{$spineX1}' y1='0' x2='{$spineX2}' y2='0' stroke='#00ff88' stroke-width='1.4' stroke-linecap='round'/>
-            </g>";
-        }
+        <!-- White Venom Fangs -->
+        <polygon points='16,6.5 19,6 18,7.5' fill='#ffffff'/>
+        <polygon points='16,9.5 19,10 18,8.5' fill='#ffffff'/>
+
+        <!-- Bifurcated Darting Red Tongue -->
+        <g class='cobra-tongue'>
+            <path d='M 18,8 L 24,8 L 28,5.5 M 24,8 L 28,10.5' fill='none' stroke='#ef4444' stroke-width='1.2' stroke-linecap='round'/>
+        </g>
+    </g>
+HEAD;
+
+    // Tapered muscle segments (7 body segments trailing behind head)
+    $segSpecs = [
+        [14, 12, 5.0, "#134e4a", "#0f766e", true],   // s1 (muscular neck)
+        [14, 12, 5.0, "#115e59", "#134e4a", false],  // s2
+        [13, 11, 4.5, "#134e4a", "#0f766e", true],   // s3 (torso band)
+        [13, 11, 4.5, "#115e59", "#134e4a", false],  // s4
+        [12, 10, 4.0, "#134e4a", "#0f766e", true],   // s5 (mid body)
+        [11, 9,  3.5, "#0f766e", "#134e4a", false],  // s6
+        [9,  7,  3.0, "#0f766e", "#134e4a", true],   // s7 (tail tip)
+    ];
+
+    $cobraBodySegments = [];
+    foreach ($segSpecs as $idx => [$w, $h, $rx, $fillCol, $strokeCol, $hasBand]) {
+        $segNum = $idx + 1;
+        $yOff = (16 - $h) / 2.0;
+        $xOff = (16 - $w) / 2.0;
+        $bandPath = $hasBand
+            ? "<path d='M " . ($xOff + 3) . ",{$yOff} Q " . ($xOff + 7) . "," . ($yOff + $h / 2.0) . " " . ($xOff + 3) . "," . ($yOff + $h) . "' fill='none' stroke='#ffd700' stroke-width='1.3' stroke-linecap='round'/>"
+            : "";
+
+        $cobraBodySegments[] = "
+        <g class='s s{$segNum}'>
+            <rect x='{$xOff}' y='{$yOff}' width='{$w}' height='{$h}' rx='{$rx}' ry='{$rx}' fill='{$fillCol}' stroke='{$strokeCol}' stroke-width='1'/>
+            {$bandPath}
+        </g>";
     }
-
-    $segCssRules = [];
-    for ($s = 1; $s <= $numSegments; $s++) {
-        $segCssRules[] = ".cobra-seg-{$s} { animation: cobraSeg{$s}Move 20s linear infinite; }";
-    }
-
-    $allCss = implode("\n", $cssParts);
-    $segRules = implode("\n", $segCssRules);
-    $monthsRendered = implode("", $monthSvg);
-    $weekdaysRendered = implode("", $weekdaySvg);
-    $cellsRendered = implode("", $cellsSvg);
-    $segmentsRendered = implode("", $segmentsSvg);
 
     $legendX = $svgWidth - 120;
     $legendY = $svgHeight - 12;
 
+    $sRulesCss = implode("\n    ", $sRules);
+    $cellCssBlock = implode("\n", $cellCss);
+    $monthSvgBlock = implode("\n        ", $monthSvg);
+    $weekdaySvgBlock = implode("\n        ", $weekdaySvg);
+    $cellRectsBlock = implode("\n        ", $cellRects);
+    $reversedSegments = implode("\n        ", array_reverse($cobraBodySegments));
+    $gridW = 53 * $cell;
+    $gridH = 7 * $cell;
+
     return <<<SVG
 <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 {$svgWidth} {$svgHeight}' width='100%' height='auto' style='isolation: isolate; background: #0d1117; border-radius: 6px;'>
     <defs>
-        <!-- Eye Glow Filter -->
-        <filter id='eyeGlow' x='-50%' y='-50%' width='200%' height='200%'>
-            <feGaussianBlur stdDeviation='2' result='blur'/>
-            <feMerge>
-                <feMergeNode in='blur'/>
-                <feMergeNode in='SourceGraphic'/>
-            </feMerge>
-        </filter>
-        
-        <!-- Hood Metallic Gradient -->
-        <linearGradient id='hoodGrad' x1='0%' y1='0%' x2='100%' y2='100%'>
-            <stop offset='0%' stop-color='#1f2937'/>
-            <stop offset='50%' stop-color='#0f172a'/>
-            <stop offset='100%' stop-color='#020617'/>
-        </linearGradient>
-
-        <!-- Body Segments Gradient -->
-        <linearGradient id='segGrad' x1='0%' y1='0%' x2='100%' y2='100%'>
-            <stop offset='0%' stop-color='#1e293b'/>
-            <stop offset='50%' stop-color='#0f172a'/>
-            <stop offset='100%' stop-color='#000000'/>
-        </linearGradient>
+        <!-- Clip path to keep cobra strictly within the active contribution grid -->
+        <clipPath id='grid-boundary-clip'>
+            <rect x='0' y='0' width='{$gridW}' height='{$gridH}'/>
+        </clipPath>
     </defs>
 
     <style>
         @keyframes tongueFlutter {
             0%, 100% { transform: scaleX(0.2); opacity: 0; }
-            20%, 40% { transform: scaleX(1.3) scaleY(1.1); opacity: 1; }
-            30% { transform: scaleX(1.4) translateY(-1px); opacity: 1; }
-            50% { transform: scaleX(0.1); opacity: 0; }
+            25%, 50% { transform: scaleX(1.3); opacity: 1; }
+            35% { transform: scaleX(1.4) translateY(-0.5px); opacity: 1; }
+            60% { transform: scaleX(0.1); opacity: 0; }
         }
         .cobra-tongue {
-            transform-origin: 26px 0px;
-            animation: tongueFlutter 0.75s ease-in-out infinite;
+            transform-origin: 18px 8px;
+            animation: tongueFlutter 0.45s ease-in-out infinite;
         }
-        @keyframes orbBreathe {
-            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px #00ff88); }
-            50% { transform: scale(1.15); filter: drop-shadow(0 0 5px #00ff88); }
+        .c {
+            shape-rendering: geometricPrecision;
+            stroke-width: 1px;
+            stroke: #1b1f230a;
         }
-        .orb-pulse {
-            transform-origin: center;
-            animation: orbBreathe 2s ease-in-out infinite;
+        .s {
+            shape-rendering: geometricPrecision;
         }
-        @keyframes orbBreatheCyan {
-            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px #00f5ff); }
-            50% { transform: scale(1.2); filter: drop-shadow(0 0 6px #00f5ff); }
-        }
-        .orb-pulse-cyan {
-            transform-origin: center;
-            animation: orbBreatheCyan 1.8s ease-in-out infinite 0.3s;
-        }
-        @keyframes orbBreathePurple {
-            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px #c084fc); }
-            50% { transform: scale(1.25); filter: drop-shadow(0 0 7px #c084fc); }
-        }
-        .orb-pulse-purple {
-            transform-origin: center;
-            animation: orbBreathePurple 1.6s ease-in-out infinite 0.6s;
-        }
-        @keyframes orbBreatheGold {
-            0%, 100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 3px #ffd700); }
-            50% { transform: scale(1.3) rotate(180deg); filter: drop-shadow(0 0 8px #ffd700); }
-        }
-        .orb-pulse-gold {
-            transform-origin: center;
-            animation: orbBreatheGold 1.4s ease-in-out infinite;
-        }
-        .cobra-head {
-            animation: cobraHeadMove 20s linear infinite;
-        }
-        {$segRules}
-
-        {$allCss}
+        {$sRulesCss}
+        {$cobraMoveKf}
+        {$cellCssBlock}
     </style>
 
     <!-- Month Labels -->
     <g id='months-layer'>
-        {$monthsRendered}
+        {$monthSvgBlock}
     </g>
 
     <!-- Weekday Labels -->
     <g id='weekdays-layer'>
-        {$weekdaysRendered}
+        {$weekdaySvgBlock}
     </g>
 
-    <!-- Contribution Grid & Fancy Meals -->
-    <g id='grid-cells'>
-        {$cellsRendered}
+    <!-- Grid Cells (Contribution Boxes) -->
+    <g id='grid-cells' transform='translate({$gridX0}, {$gridY0})'>
+        {$cellRectsBlock}
     </g>
 
-    <!-- ================= THE LIVING KING COBRA ================= -->
-    <g id='king-cobra-group'>
-        <!-- Body Segments (rendered back to front for scale layering) -->
-        {$segmentsRendered}
-        
-        <!-- Authentic Flared King Cobra Hood & Head (34px wide) -->
-        <g id='cobra-head' class='cobra-head'>
-            <path d='M -16,-6 C -14,-15 -6,-18 5,-12 C 13,-8 22,-4 26,0 C 22,4 13,8 5,12 C -6,18 -14,15 -16,6 Z' fill='url(#hoodGrad)' stroke='#ff3344' stroke-width='1.5' stroke-linejoin='round'/>
-            
-            <!-- Iconic Chevron Spectacle Hood Emblem -->
-            <path d='M -8,-7 Q -2,0 -8,7 M -3,-5 Q 3,0 -3,5' fill='none' stroke='#ffd700' stroke-width='2' stroke-linecap='round'/>
-            <circle cx='0' cy='0' r='1.8' fill='#ffd700'/>
-
-            <!-- Snout & Crown Ridge -->
-            <path d='M 6,-9 L 22,-4 L 27,0 L 22,4 L 6,9' fill='none' stroke='#00ff88' stroke-width='1.2'/>
-
-            <!-- Glowing Ruby Predatory Eyes with Slit Pupils -->
-            <circle cx='14' cy='-5.5' r='2.5' fill='#ff0044' filter='url(#eyeGlow)'/>
-            <circle cx='14' cy='5.5' r='2.5' fill='#ff0044' filter='url(#eyeGlow)'/>
-            <line x1='14' y1='-7' x2='14' y2='-4' stroke='#000000' stroke-width='1.2' stroke-linecap='round'/>
-            <line x1='14' y1='4' x2='14' y2='7' stroke='#000000' stroke-width='1.2' stroke-linecap='round'/>
-
-            <!-- Dual Razor Fangs -->
-            <polygon points='22,-3 27,-4 24,-1.5' fill='#ffffff'/>
-            <polygon points='22,3 27,4 24,1.5' fill='#ffffff'/>
-
-            <!-- Darting Bifurcated Venom Tongue -->
-            <g class='cobra-tongue'>
-                <path d='M 26,0 L 36,0 L 42,-4 M 36,0 L 42,4' fill='none' stroke='#ff0044' stroke-width='1.6' stroke-linecap='round'/>
-            </g>
-        </g>
+    <!-- THE REAL KING COBRA (Clipped cleanly to the grid arena) -->
+    <g id='king-cobra-arena' transform='translate({$gridX0}, {$gridY0})' clip-path='url(#grid-boundary-clip)'>
+        {$reversedSegments}
+        {$cobraHead}
     </g>
 
-    <!-- ================= FOOTER LEGEND ================= -->
+    <!-- Legend -->
     <g transform='translate({$legendX}, {$legendY})'>
         <text x='-8' y='8' fill='#8b949e' font-size='9' font-family='-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif' text-anchor='end'>Less</text>
-        <rect x='0' y='0' width='9' height='9' rx='2' fill='#161b22' stroke='#21262d' stroke-width='0.5'/>
-        <g transform='translate(13, 0)'>
-            <rect x='0' y='0' width='9' height='9' rx='2' fill='#0e4429' stroke='#00ff88' stroke-width='0.5'/>
-            <circle cx='4.5' cy='4.5' r='1.8' fill='#00ff88'/>
-        </g>
-        <g transform='translate(26, 0)'>
-            <rect x='0' y='0' width='9' height='9' rx='2' fill='#003820' stroke='#00f5ff' stroke-width='0.5'/>
-            <circle cx='4.5' cy='4.5' r='2.2' fill='#00f5ff'/>
-        </g>
-        <g transform='translate(39, 0)'>
-            <rect x='0' y='0' width='9' height='9' rx='2' fill='#1f1a3a' stroke='#c084fc' stroke-width='0.5'/>
-            <circle cx='4.5' cy='4.5' r='2.5' fill='#c084fc'/>
-        </g>
-        <g transform='translate(52, 0)'>
-            <rect x='0' y='0' width='9' height='9' rx='2' fill='#2d1500' stroke='#ffd700' stroke-width='0.5'/>
-            <circle cx='4.5' cy='4.5' r='2.8' fill='#ffd700'/>
-        </g>
+        <rect x='0' y='0' width='9' height='9' rx='2' ry='2' fill='#161b22'/>
+        <rect x='13' y='0' width='9' height='9' rx='2' ry='2' fill='#0e4429'/>
+        <rect x='26' y='0' width='9' height='9' rx='2' ry='2' fill='#006d32'/>
+        <rect x='39' y='0' width='9' height='9' rx='2' ry='2' fill='#26a641'/>
+        <rect x='52' y='0' width='9' height='9' rx='2' ry='2' fill='#39d353'/>
         <text x='68' y='8' fill='#8b949e' font-size='9' font-family='-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif'>More</text>
     </g>
 </svg>

@@ -223,7 +223,7 @@ function renderActivityGraph(array $contributions, array $params = []): string
     <!-- Telemetry Stats Pill Badge -->
     <g transform='translate(1150, 42)'>
         <text x='0' y='0' text-anchor='end' fill='{$pointColor}' font-size='13px' font-family='\"Segoe UI\", Ubuntu, sans-serif' font-weight='600'>
-            Last {$numDays} Days &bull; Peak: {$highestCount}/day &bull; Total: {$totalContributions} &bull; Avg: {$avgDaily}/day
+            Last {$numDays} Days &#8226; Peak: {$highestCount}/day &#8226; Total: {$totalContributions} &#8226; Avg: {$avgDaily}/day
         </text>
     </g>
 

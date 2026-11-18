@@ -65,6 +65,9 @@ jobs:
           # 6. Self-Hosted Microsoft Dark Activity Graph (31 Days)
           php bin/generate-activity-graph.php --user="xploitoverload" --days=31 --path="build/activity-graph.svg"
 
+          # 7. Self-Hosted GitHub Dashboard (Telemetry & Activity Chart)
+          php bin/generate-dashboard.php --user="xploitoverload" --path="build/dashboard.svg"
+
       - name: Generate Landing Page
         run: |
           cat << 'EOF' > build/index.html
@@ -147,6 +150,12 @@ jobs:
             <p class="subtitle">Autonomous GitHub Readme Streak Stats &bull; Multi-Layer Flame &bull; Self-Hosted Activity Graph</p>
             
             <div class="card-container">
+              <div class="card-box featured">
+                <h3>[0x00] GitHub System Dashboard <span class="badge">SELF-HOSTED PLATFORM</span></h3>
+                <img class="streak-card" src="dashboard.svg" alt="GitHub System Dashboard">
+                <div class="code-block">[![GitHub Dashboard](https://xploitoverload.github.io/github-readme-streak-stats/dashboard.svg)](https://github.com/xploitoverload)</div>
+              </div>
+
               <div class="card-box featured">
                 <h3>[0x01] Microsoft Dark <span class="badge">INSANE FIRE EDITION</span></h3>
                 <img class="streak-card" src="streak-microsoft-dark.svg" alt="Microsoft Dark Streak Stats">

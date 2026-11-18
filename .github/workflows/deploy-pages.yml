@@ -48,16 +48,16 @@ jobs:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # 1. Default Streak Card
-          php bin/generate-card.php --options="user=xploitoverload" --path="build/streak.svg"
+          php bin/generate-card.php --options="user=xploitoverload&starting_year=2018" --path="build/streak.svg"
           
           # 2. Dark Theme
-          php bin/generate-card.php --options="user=xploitoverload&theme=dark" --path="build/streak-dark.svg"
+          php bin/generate-card.php --options="user=xploitoverload&theme=dark&starting_year=2018" --path="build/streak-dark.svg"
           
           # 3. Radical Theme
-          php bin/generate-card.php --options="user=xploitoverload&theme=radical" --path="build/streak-radical.svg"
+          php bin/generate-card.php --options="user=xploitoverload&theme=radical&starting_year=2018" --path="build/streak-radical.svg"
           
           # 4. Custom CX330 The Star Tactical Red/Black Theme
-          php bin/generate-card.php --options="user=xploitoverload&background=0a0a0a&border=e50914&stroke=e50914&ring=e50914&fire=e50914&currStreakNum=ffffff&sideNums=ffffff&currStreakLabel=e50914&sideLabels=cccccc&dates=888888" --path="build/streak-cx330.svg"
+          php bin/generate-card.php --options="user=xploitoverload&starting_year=2018&background=0a0a0a&border=e50914&stroke=e50914&ring=e50914&fire=e50914&currStreakNum=ffffff&sideNums=ffffff&currStreakLabel=e50914&sideLabels=cccccc&dates=888888" --path="build/streak-cx330.svg"
 
       - name: Generate Landing Page
         run: |

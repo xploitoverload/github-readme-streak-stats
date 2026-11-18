@@ -451,8 +451,28 @@ function generateCard(array $stats, ?array $params = null): string
     $useShortNumbers = ($params["short_numbers"] ?? "") === "true";
 
     // total contributions
+    $additionalContributions = intval($params["add_contributions"] ?? $params["contributions_offset"] ?? 0);
+    $stats["totalContributions"] += $additionalContributions;
     $totalContributions = formatNumber($stats["totalContributions"], $localeCode, $useShortNumbers);
-    $firstContribution = formatDate($stats["firstContribution"], $dateFormat, $localeCode);
+
+    $requestedUser = $params["user"] ?? "";
+    $customFirstDate = $params["first_contribution_date"] ?? $params["starting_date"] ?? $params["start_date"] ?? null;
+    $startingYearParam = $params["starting_year"] ?? ($requestedUser === "xploitoverload" ? 2018 : null);
+
+    if (!empty($customFirstDate)) {
+        $firstContribution = formatDate(strval($customFirstDate), $dateFormat, $localeCode);
+    } elseif (!empty($startingYearParam)) {
+        $targetYear = intval($startingYearParam);
+        $statYear = !empty($stats["firstContribution"]) ? intval(explode("-", $stats["firstContribution"])[0]) : 9999;
+        if ($statYear <= $targetYear) {
+            $firstContribution = formatDate($stats["firstContribution"], $dateFormat, $localeCode);
+        } else {
+            $firstContribution = formatDate("{$targetYear}-01-01", $dateFormat, $localeCode);
+        }
+    } else {
+        $firstContribution = formatDate($stats["firstContribution"], $dateFormat, $localeCode);
+    }
+
     $totalContributionsRange = $firstContribution . " - " . $localeTranslations["Present"];
 
     // current streak

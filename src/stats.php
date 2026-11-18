@@ -138,16 +138,17 @@ function getContributionGraphs(string $user, ?int $startingYear = null): array
     }
     // extract the year from the created datetime string
     $userCreatedYear = intval(explode("-", $userCreatedDateTimeString)[0]);
+    $contributionYears = $responses[$currentYear]->data->user->contributionsCollection->contributionYears ?? [];
+    $earliestContributionYear = !empty($contributionYears) ? min($contributionYears) : $userCreatedYear;
     // if override parameter is null then define starting year
-    // as the user created year; else use the provided override year
-    $minimumYear = $startingYear ?: $userCreatedYear;
+    // as the earliest contribution year (or user created year); else use the provided override year
+    $minimumYear = $startingYear ?: min($userCreatedYear, $earliestContributionYear);
     // make sure the minimum year is not before 2005 (the year Git was created)
     $minimumYear = max($minimumYear, 2005);
-    // create an array of years from the user's created year to one year before the current year
+    // create an array of years from the minimum year to one year before the current year
     $yearsToRequest = range($minimumYear, $currentYear - 1);
     // also check the first contribution year if the year is before 2005 (the year Git was created)
     // since the user may have backdated some commits to a specific year such as 1970 (see #448)
-    $contributionYears = $responses[$currentYear]->data->user->contributionsCollection->contributionYears ?? [];
     $firstContributionYear = $contributionYears[count($contributionYears) - 1] ?? $userCreatedYear;
     if ($firstContributionYear < 2005) {
         array_unshift($yearsToRequest, $firstContributionYear);

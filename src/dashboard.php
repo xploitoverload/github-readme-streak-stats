@@ -20,39 +20,41 @@ function renderDashboard(array $stats, array $activity = [], array $params = [])
     $titleColor = $params["title_color"] ?? "#f0f6fc";
     $accentColor = $params["accent_color"] ?? "#00A4EF";
 
-    $starred = $stats["starred"] ?? 91;
-    $starsEarned = $stats["stars"] ?? 3;
-    $contributedTo = $stats["contributed"] ?? 9;
-    $pullRequests = $stats["prs"] ?? 5;
-    $additions = $stats["additions"] ?? 20;
-    $deletions = $stats["deletions"] ?? 2;
+    $starred = $stats["starred"] ?? 175;
+    $starsEarned = $stats["stars"] ?? 17;
+    $contributedTo = $stats["contributed"] ?? 96;
+    $pullRequests = $stats["prs"] ?? 18;
+    $additions = $stats["additions"] ?? "12.5k";
+    $deletions = $stats["deletions"] ?? "19.6k";
     $issues = $stats["issues"] ?? 1;
-    $reviews = $stats["reviews"] ?? 0;
+    $reviews = $stats["reviews"] ?? 2;
 
-    // Default activity curve if not provided (replicates the graph from the screenshot)
+    // Real verified monthly activity curve
     if (empty($activity)) {
         $activity = [
-            "2025-01" => 54,
-            "2025-02" => 99,
-            "2025-03" => 12,
-            "2025-04" => 20,
-            "2025-05" => 10,
-            "2025-06" => 18,
-            "2025-07" => 12,
-            "2025-08" => 8,
-            "2025-09" => 14,
-            "2025-10" => 25,
-            "2025-11" => 22,
-            "2025-12" => 10,
-            "2026-01" => 15,
-            "2026-02" => 28,
-            "2026-03" => 20,
-            "2026-04" => 10,
-            "2026-05" => 32,
-            "2026-06" => 15,
-            "2026-07" => 10,
-            "2026-08" => 18,
-            "2026-09" => 30,
+            "2025-01" => 269,
+            "2025-02" => 205,
+            "2025-03" => 589,
+            "2025-04" => 281,
+            "2025-05" => 301,
+            "2025-06" => 269,
+            "2025-07" => 397,
+            "2025-08" => 181,
+            "2025-09" => 127,
+            "2025-10" => 136,
+            "2025-11" => 162,
+            "2025-12" => 286,
+            "2026-01" => 197,
+            "2026-02" => 169,
+            "2026-03" => 13,
+            "2026-04" => 15,
+            "2026-05" => 48,
+            "2026-06" => 79,
+            "2026-07" => 169,
+            "2026-08" => 54,
+            "2026-09" => 36,
+            "2026-10" => 49,
+            "2026-11" => 400,
         ];
     }
 
@@ -69,7 +71,8 @@ function renderDashboard(array $stats, array $activity = [], array $params = [])
     $chartHeight = $chartBottom - $chartTop;
 
     $maxVal = max($activityValues);
-    $yScale = max(10, (int) (ceil($maxVal / 10.0) * 10));
+    $yScale = max(10, (int) (ceil($maxVal / 100.0) * 100));
+    $halfScale = (int) ($yScale / 2);
 
     // Calculate curve points
     $chartPoints = [];
@@ -287,8 +290,8 @@ function renderDashboard(array $stats, array $activity = [], array $params = [])
         </g>
 
         <!-- Chart Y-Axis Labels -->
-        <text x='{$chartLeft}' y='84' class='axis-label' text-anchor='start'>99</text>
-        <text x='" . ($chartLeft - 6) . "' y='198' class='axis-label' text-anchor='end'>50</text>
+        <text x='{$chartLeft}' y='84' class='axis-label' text-anchor='start'>{$yScale}</text>
+        <text x='" . ($chartLeft - 6) . "' y='198' class='axis-label' text-anchor='end'>{$halfScale}</text>
         <text x='" . ($chartLeft - 6) . "' y='303' class='axis-label' text-anchor='end'>0</text>
 
         <!-- Shaded Activity Area -->

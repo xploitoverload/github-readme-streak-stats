@@ -3,30 +3,25 @@
 declare(strict_types=1);
 
 /**
- * Generate a standalone animated SVG of the King Cobra Strike Protocol.
- * Renders the user's authentic contribution calendar matrix where an articulated,
- * hooded King Cobra with glowing ruby eyes and darting forked tongue patrols the grid,
- * striking and devouring multi-tiered glowing energy meals (cyber venom pearls).
+ * Generate a standalone animated SVG of the King Cobra Contribution Predator.
+ * Renders the user's authentic contribution calendar matrix without extraneous banners,
+ * where an articulated hooded King Cobra actively hunts, eats, and empties fancy glowing meals
+ * across the grid, leaving clean empty cells in its wake.
  *
  * @param array<int,array{date:string,count:int,level:int}> $days Array of daily contributions
- * @param array<string,mixed> $params Options (user, title, streak, etc.)
+ * @param array<string,mixed> $params Options
  * @return string Full SVG XML string
  */
 function renderKingCobra(array $days, array $params = []): string
 {
-    $username = $params["user"] ?? "xploitoverload";
-    $customTitle = $params["title"] ?? "KING COBRA // STRIKE PROTOCOL";
-    $streakDays = $params["streak"] ?? 40;
-    $totalCommits = $params["commits"] ?? 1723;
-
     $cellWidth = 11;
     $cellGap = 4;
     $step = $cellWidth + $cellGap; // 15px
-    $gridX0 = 48;
-    $gridY0 = 74;
+    $gridX0 = 36;
+    $gridY0 = 26;
 
-    $svgWidth = 910;
-    $svgHeight = 225;
+    $svgWidth = 875;
+    $svgHeight = 160;
 
     // Catmull-Rom spline interpolation
     $catmullRom = function (array $p0, array $p1, array $p2, array $p3, float $t): array {
@@ -43,28 +38,24 @@ function renderKingCobra(array $days, array $params = []): string
         return [$x, $y];
     };
 
-    // Strategic hunting waypoints visiting major active contribution clusters
-    $waypoints = [
-        [$gridX0 + 2 * $step, $gridY0 + 1 * $step],
-        [$gridX0 + 7 * $step, $gridY0 + 4 * $step],
-        [$gridX0 + 12 * $step, $gridY0 + 0 * $step],
-        [$gridX0 + 18 * $step, $gridY0 + 5 * $step],
-        [$gridX0 + 24 * $step, $gridY0 + 2 * $step],
-        [$gridX0 + 30 * $step, $gridY0 + 1 * $step],
-        [$gridX0 + 36 * $step, $gridY0 + 5 * $step],
-        [$gridX0 + 42 * $step, $gridY0 + 2 * $step],
-        [$gridX0 + 47 * $step, $gridY0 + 0 * $step],
-        [$gridX0 + 51 * $step, $gridY0 + 3 * $step],
-        [$gridX0 + 51 * $step, $gridY0 + 6 * $step],
-        [$gridX0 + 45 * $step, $gridY0 + 6 * $step],
-        [$gridX0 + 38 * $step, $gridY0 + 3 * $step],
-        [$gridX0 + 31 * $step, $gridY0 + 6 * $step],
-        [$gridX0 + 22 * $step, $gridY0 + 4 * $step],
-        [$gridX0 + 15 * $step, $gridY0 + 6 * $step],
-        [$gridX0 + 8 * $step, $gridY0 + 3 * $step],
+    // Full serpentine hunting sweep waypoints across the grid:
+    // Forward sweep left-to-right (upper/mid rows), turnaround, backward sweep right-to-left (lower rows)
+    $waypointsGrid = [
+        [0, 1], [4, 3], [8, 1], [12, 0], [16, 2], [20, 3],
+        [24, 1], [28, 0], [32, 2], [36, 3], [40, 1], [44, 0],
+        [48, 2], [52, 2],
+        [52, 4], [51, 6],
+        [48, 5], [44, 6], [40, 4], [36, 6], [32, 5], [28, 4],
+        [24, 6], [20, 5], [16, 4], [12, 6], [8, 5], [4, 4], [0, 6],
+        [0, 4], [0, 1]
     ];
 
-    $numWp = count($waypoints);
+    $waypoints = [];
+    foreach ($waypointsGrid as $wg) {
+        $waypoints[] = [$gridX0 + $wg[0] * $step, $gridY0 + $wg[1] * $step];
+    }
+
+    $numWp = count($waypoints) - 1;
     $stepsPerSeg = 5;
     $rawPoints = [];
 
@@ -90,9 +81,8 @@ function renderKingCobra(array $days, array $params = []): string
         $dy = $next[1] - $curr[1];
         $angle = rad2deg(atan2($dy, $dx));
 
-        // Lateral slither wave (9 undulation cycles along loop)
-        $waveAngle = 2 * M_PI * ($i / (float) $totalFrames) * 9;
-        $slitherOffset = sin($waveAngle) * 3.5;
+        $waveAngle = 2 * M_PI * ($i / (float) $totalFrames) * 10;
+        $slitherOffset = sin($waveAngle) * 3.0;
 
         $dist = hypot($dx, $dy);
         if ($dist > 0.001) {
@@ -105,23 +95,32 @@ function renderKingCobra(array $days, array $params = []): string
 
         $x = $curr[0] + $perpX;
         $y = $curr[1] + $perpY;
-        $headSway = cos($waveAngle) * 8.0;
+        $headSway = cos($waveAngle) * 7.0;
         $totalAngle = $angle + $headSway;
 
         $trajectory[] = [round($x, 1), round($y, 1), round($totalAngle, 1)];
     }
 
-    // Identify devoured meals at waypoint strikes
-    $devourDict = [];
-    for ($i = 0; $i < $numWp; $i++) {
-        $frameIdx = $i * $stepsPerSeg;
-        $pct = round(($frameIdx / (float) $totalFrames) * 100, 1);
-        $wpX = $waypoints[$i][0];
-        $wpY = $waypoints[$i][1];
-        $col = (int) round(($wpX - $gridX0) / (float) $step);
-        $row = (int) round(($wpY - $gridY0) / (float) $step);
-        $mid = "meal_{$col}_{$row}";
-        $devourDict[$mid] = ["pct" => $pct, "x" => $wpX, "y" => $wpY];
+    // Identify all active meals eaten and emptied along the Cobra's hunting path
+    $eatenCells = [];
+    foreach ($trajectory as $frameIdx => $tPos) {
+        $pct = round(($frameIdx / (float) $totalFrames) * 100, 2);
+        [$px, $py] = [$tPos[0], $tPos[1]];
+
+        foreach ($days as $i => $d) {
+            $c = (int) ($i / 7);
+            $r = $i % 7;
+            if ($c > 52 || ($d["level"] ?? 0) === 0) {
+                continue;
+            }
+            $cx = $gridX0 + $c * $step + 5.5;
+            $cy = $gridY0 + $r * $step + 5.5;
+            $dist = hypot($px - $cx, $py - $cy);
+            $mid = "meal_{$c}_{$r}";
+            if ($dist <= 11.5 && !isset($eatenCells[$mid])) {
+                $eatenCells[$mid] = [$pct, $cx, $cy];
+            }
+        }
     }
 
     // CSS Keyframe Generation
@@ -134,7 +133,7 @@ function renderKingCobra(array $days, array $params = []): string
         $pct = round(($i / (float) $totalFrames) * 100, 2);
         $idx = $i % $totalFrames;
         [$x, $y, $ang] = $trajectory[$idx];
-        $headKf[] = "  {$pct}% { transform: translate({$x}px, {$y}px) rotate({$ang}deg); }";
+        $headKf[] = "  {$pct}% { transform: translate({$x}px, {y}px) rotate({$ang}deg); }";
     }
     $headKf[] = "}";
     $cssParts[] = implode("\n", $headKf);
@@ -147,29 +146,27 @@ function renderKingCobra(array $days, array $params = []): string
             $pct = round(($i / (float) $totalFrames) * 100, 2);
             $idx = ($i - $delayFrames + $totalFrames * 10) % $totalFrames;
             [$x, $y, $ang] = $trajectory[$idx];
-            $segKf[] = "  {$pct}% { transform: translate({$x}px, {$y}px) rotate({$ang}deg); }";
+            $segKf[] = "  {$pct}% { transform: translate({$x}px, {y}px) rotate({$ang}deg); }";
         }
         $segKf[] = "}";
         $cssParts[] = implode("\n", $segKf);
     }
 
-    // 3. Devour Strike Keyframes for Targeted Meals
-    foreach ($devourDict as $mid => $dinfo) {
-        $t0 = $dinfo["pct"];
-        $tBurst = round(min(100.0, $t0 + 0.6), 2);
-        $tDone = round(min(100.0, $t0 + 1.2), 2);
-        $originX = $dinfo["x"] + 5.5;
-        $originY = $dinfo["y"] + 5.5;
+    // 3. Devour & Emptying Keyframes for Eaten Meals
+    foreach ($eatenCells as $mid => $info) {
+        [$t0, $cx, $cy] = $info;
+        $tBurst = round(min(100.0, $t0 + 0.3), 2);
+        $tEmpty = round(min(100.0, $t0 + 0.7), 2);
         $cssParts[] = <<<CSS
         @keyframes eat_{$mid} {
             0%, {$t0}% { opacity: 1; transform: scale(1); }
-            {$tBurst}% { opacity: 1; transform: scale(1.7); filter: brightness(3) drop-shadow(0 0 6px #ff0055); }
-            {$tDone}%, 99.9% { opacity: 0.15; transform: scale(0.5); }
+            {$tBurst}% { opacity: 1; transform: scale(1.5); filter: brightness(2.5) drop-shadow(0 0 5px #ff0055); }
+            {$tEmpty}%, 99.4% { opacity: 0; transform: scale(0); }
             100% { opacity: 1; transform: scale(1); }
         }
         #{$mid} {
-            animation: eat_{$mid} 18s ease-in-out infinite;
-            transform-origin: {$originX}px {$originY}px;
+            animation: eat_{$mid} 20s ease-in-out infinite;
+            transform-origin: {$cx}px {$cy}px;
         }
 CSS;
     }
@@ -180,21 +177,21 @@ CSS;
     foreach ($months as $i => $m) {
         $col = (int) round($i * (52.0 / 12.0));
         $mx = $gridX0 + $col * $step;
-        $monthSvg[] = "<text x='{$mx}' y='62' fill='#8b949e' font-size='10' font-family='-apple-system,BlinkMacSystemFont,\"Segoe UI\",Helvetica,Arial,sans-serif'>{$m}</text>";
+        $monthSvg[] = "<text x='{$mx}' y='16' fill='#8b949e' font-size='9' font-family='-apple-system,BlinkMacSystemFont,\"Segoe UI\",Helvetica,Arial,sans-serif'>{$m}</text>";
     }
 
     // Weekday Labels
     $wMonY = $gridY0 + 1 * $step + 9;
     $wWedY = $gridY0 + 3 * $step + 9;
     $wFriY = $gridY0 + 5 * $step + 9;
-    $wLabelX = $gridX0 - 8;
+    $wLabelX = $gridX0 - 6;
     $weekdaySvg = [
         "<text x='{$wLabelX}' y='{$wMonY}' fill='#8b949e' font-size='9' font-family='-apple-system,BlinkMacSystemFont,\"Segoe UI\",Helvetica,Arial,sans-serif' text-anchor='end'>Mon</text>",
         "<text x='{$wLabelX}' y='{$wWedY}' fill='#8b949e' font-size='9' font-family='-apple-system,BlinkMacSystemFont,\"Segoe UI\",Helvetica,Arial,sans-serif' text-anchor='end'>Wed</text>",
         "<text x='{$wLabelX}' y='{$wFriY}' fill='#8b949e' font-size='9' font-family='-apple-system,BlinkMacSystemFont,\"Segoe UI\",Helvetica,Arial,sans-serif' text-anchor='end'>Fri</text>",
     ];
 
-    // Grid Cells & Fancy Meals
+    // Grid Cells & Meals (with base empty tile underneath so emptied cells reveal the empty base)
     $cellsSvg = [];
     foreach ($days as $i => $d) {
         $col = (int) ($i / 7);
@@ -207,38 +204,30 @@ CSS;
         $lvl = $d["level"] ?? 0;
         $mid = "meal_{$col}_{$row}";
 
-        if ($lvl === 0) {
-            $cellsSvg[] = "<rect x='{$cx}' y='{$cy}' width='{$cellWidth}' height='{$cellWidth}' rx='2.5' fill='#161b22' stroke='#21262d' stroke-width='0.6'/>";
-        } elseif ($lvl === 1) {
-            // Emerald Plasma Pellet
-            $cxMid = $cx + 5.5;
-            $cyMid = $cy + 5.5;
+        // Always render base background cell
+        $cellsSvg[] = "<rect x='{$cx}' y='{$cy}' width='{$cellWidth}' height='{$cellWidth}' rx='2.5' fill='#161b22' stroke='#21262d' stroke-width='0.6'/>";
+
+        $cxMid = $cx + 5.5;
+        $cyMid = $cy + 5.5;
+
+        if ($lvl === 1) {
             $cellsSvg[] = "<g id='{$mid}'>
                 <rect x='{$cx}' y='{$cy}' width='{$cellWidth}' height='{$cellWidth}' rx='2.5' fill='#0e4429' stroke='#00ff88' stroke-width='0.6'/>
                 <circle cx='{$cxMid}' cy='{$cyMid}' r='2.5' fill='#00ff88' class='orb-pulse'/>
             </g>";
         } elseif ($lvl === 2) {
-            // Cyan Hyper-Core
-            $cxMid = $cx + 5.5;
-            $cyMid = $cy + 5.5;
             $cellsSvg[] = "<g id='{$mid}'>
                 <rect x='{$cx}' y='{$cy}' width='{$cellWidth}' height='{$cellWidth}' rx='2.5' fill='#003820' stroke='#00f5ff' stroke-width='0.8'/>
                 <circle cx='{$cxMid}' cy='{$cyMid}' r='3' fill='#00f5ff' class='orb-pulse-cyan'/>
                 <circle cx='{$cxMid}' cy='{$cyMid}' r='4.5' fill='none' stroke='#00f5ff' stroke-width='0.5' stroke-dasharray='1.5,1.5'/>
             </g>";
         } elseif ($lvl === 3) {
-            // Amethyst Hyper-Sphere
-            $cxMid = $cx + 5.5;
-            $cyMid = $cy + 5.5;
             $cellsSvg[] = "<g id='{$mid}'>
                 <rect x='{$cx}' y='{$cy}' width='{$cellWidth}' height='{$cellWidth}' rx='2.5' fill='#1f1a3a' stroke='#c084fc' stroke-width='0.8'/>
                 <circle cx='{$cxMid}' cy='{$cyMid}' r='3.2' fill='#c084fc' class='orb-pulse-purple'/>
                 <circle cx='{$cxMid}' cy='{$cyMid}' r='4.8' fill='none' stroke='#f43f5e' stroke-width='0.6'/>
             </g>";
-        } else {
-            // Solar Dragon Pearl
-            $cxMid = $cx + 5.5;
-            $cyMid = $cy + 5.5;
+        } elseif ($lvl === 4) {
             $cellsSvg[] = "<g id='{$mid}'>
                 <rect x='{$cx}' y='{$cy}' width='{$cellWidth}' height='{$cellWidth}' rx='2.5' fill='#2d1500' stroke='#ffd700' stroke-width='1'/>
                 <circle cx='{$cxMid}' cy='{$cyMid}' r='3.8' fill='#ffd700' class='orb-pulse-gold'/>
@@ -290,12 +279,11 @@ CSS;
     $cellsRendered = implode("", $cellsSvg);
     $segmentsRendered = implode("", $segmentsSvg);
 
-    $legendX = $svgWidth - 230;
-    $legendY = $svgHeight - 16;
-    $badgeX = $svgWidth - 25;
+    $legendX = $svgWidth - 120;
+    $legendY = $svgHeight - 12;
 
     return <<<SVG
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 {$svgWidth} {$svgHeight}' width='100%' height='auto' style='isolation: isolate; background: #080c10; border-radius: 12px;'>
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 {$svgWidth} {$svgHeight}' width='100%' height='auto' style='isolation: isolate; background: #0d1117; border-radius: 6px;'>
     <defs>
         <!-- Eye Glow Filter -->
         <filter id='eyeGlow' x='-50%' y='-50%' width='200%' height='200%'>
@@ -318,13 +306,6 @@ CSS;
             <stop offset='0%' stop-color='#1e293b'/>
             <stop offset='50%' stop-color='#0f172a'/>
             <stop offset='100%' stop-color='#000000'/>
-        </linearGradient>
-
-        <!-- HUD Border Gradient -->
-        <linearGradient id='hudBorder' x1='0%' y1='0%' x2='100%' y2='0%'>
-            <stop offset='0%' stop-color='#ff3344'/>
-            <stop offset='50%' stop-color='#ffd700'/>
-            <stop offset='100%' stop-color='#00ff88'/>
         </linearGradient>
     </defs>
 
@@ -371,58 +352,20 @@ CSS;
             transform-origin: center;
             animation: orbBreatheGold 1.4s ease-in-out infinite;
         }
-        @keyframes radarPulse {
-            0% { opacity: 1; r: 3; }
-            50% { opacity: 0.4; r: 6; }
-            100% { opacity: 0; r: 9; }
-        }
-        .radar-ring {
-            animation: radarPulse 1.8s ease-out infinite;
-        }
         .cobra-head {
-            animation: cobraHeadMove 18s linear infinite;
+            animation: cobraHeadMove 20s linear infinite;
         }
-        .cobra-seg-1 { animation: cobraSeg1Move 18s linear infinite; }
-        .cobra-seg-2 { animation: cobraSeg2Move 18s linear infinite; }
-        .cobra-seg-3 { animation: cobraSeg3Move 18s linear infinite; }
-        .cobra-seg-4 { animation: cobraSeg4Move 18s linear infinite; }
-        .cobra-seg-5 { animation: cobraSeg5Move 18s linear infinite; }
-        .cobra-seg-6 { animation: cobraSeg6Move 18s linear infinite; }
-        .cobra-seg-7 { animation: cobraSeg7Move 18s linear infinite; }
-        .cobra-seg-8 { animation: cobraSeg8Move 18s linear infinite; }
+        .cobra-seg-1 { animation: cobraSeg1Move 20s linear infinite; }
+        .cobra-seg-2 { animation: cobraSeg2Move 20s linear infinite; }
+        .cobra-seg-3 { animation: cobraSeg3Move 20s linear infinite; }
+        .cobra-seg-4 { animation: cobraSeg4Move 20s linear infinite; }
+        .cobra-seg-5 { animation: cobraSeg5Move 20s linear infinite; }
+        .cobra-seg-6 { animation: cobraSeg6Move 20s linear infinite; }
+        .cobra-seg-7 { animation: cobraSeg7Move 20s linear infinite; }
+        .cobra-seg-8 { animation: cobraSeg8Move 20s linear infinite; }
 
         {$allCss}
     </style>
-
-    <!-- Background Frame -->
-    <rect x='0.5' y='0.5' width='909' height='224' rx='12' fill='#080c10' stroke='#1f2937' stroke-width='1'/>
-    <rect x='1' y='1' width='908' height='3' fill='url(#hudBorder)' rx='1.5'/>
-
-    <!-- ================= HEADER HUD ================= -->
-    <g transform='translate(24, 28)'>
-        <!-- King Cobra Crest -->
-        <g transform='translate(0, 0)'>
-            <path d='M -2,-8 C 3,-12 11,-10 14,-5 C 17,0 14,7 8,9 C 3,11 -1,7 -2,3 L -2,12 L -5,12 L -5,-8 Z' fill='#ff3344'/>
-            <circle cx='6' cy='-3' r='1.5' fill='#ffd700'/>
-        </g>
-
-        <!-- Title & Subtitle -->
-        <text x='24' y='3' font-size='15' font-weight='700' fill='#ff3344' font-family='-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif' letter-spacing='0.5'>
-            {$customTitle}
-        </text>
-        <text x='24' y='18' font-size='11' font-weight='500' fill='#8b949e' font-family='-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif'>
-            AUTONOMOUS CONTRIBUTION PREDATOR &#8226; {$totalCommits} COMMITS HARVESTED
-        </text>
-    </g>
-
-    <!-- Right Telemetry Badge -->
-    <g transform='translate({$badgeX}, 28)'>
-        <text x='0' y='10' text-anchor='end' font-size='11' font-weight='600' fill='#00ff88' font-family='-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif'>
-            STATUS: PREDATORY FLOW &#8226; CURRENT STREAK: {$streakDays} DAYS &#8226; VENOM ENGINE: ACTIVE
-        </text>
-        <circle cx='-430' cy='6' r='3.5' fill='#00ff88'/>
-        <circle cx='-430' cy='6' r='3.5' fill='none' stroke='#00ff88' stroke-width='1.2' class='radar-ring'/>
-    </g>
 
     <!-- Month Labels -->
     <g id='months-layer'>
@@ -475,31 +418,26 @@ CSS;
 
     <!-- ================= FOOTER LEGEND ================= -->
     <g transform='translate({$legendX}, {$legendY})'>
-        <text x='-8' y='9' fill='#8b949e' font-size='10' font-family='-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif' text-anchor='end'>Less</text>
-        <rect x='0' y='0' width='10' height='10' rx='2' fill='#161b22' stroke='#21262d' stroke-width='0.5'/>
-        <g transform='translate(16, 0)'>
-            <rect x='0' y='0' width='10' height='10' rx='2' fill='#0e4429' stroke='#00ff88' stroke-width='0.5'/>
-            <circle cx='5' cy='5' r='2' fill='#00ff88'/>
+        <text x='-8' y='8' fill='#8b949e' font-size='9' font-family='-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif' text-anchor='end'>Less</text>
+        <rect x='0' y='0' width='9' height='9' rx='2' fill='#161b22' stroke='#21262d' stroke-width='0.5'/>
+        <g transform='translate(13, 0)'>
+            <rect x='0' y='0' width='9' height='9' rx='2' fill='#0e4429' stroke='#00ff88' stroke-width='0.5'/>
+            <circle cx='4.5' cy='4.5' r='1.8' fill='#00ff88'/>
         </g>
-        <g transform='translate(32, 0)'>
-            <rect x='0' y='0' width='10' height='10' rx='2' fill='#003820' stroke='#00f5ff' stroke-width='0.5'/>
-            <circle cx='5' cy='5' r='2.5' fill='#00f5ff'/>
+        <g transform='translate(26, 0)'>
+            <rect x='0' y='0' width='9' height='9' rx='2' fill='#003820' stroke='#00f5ff' stroke-width='0.5'/>
+            <circle cx='4.5' cy='4.5' r='2.2' fill='#00f5ff'/>
         </g>
-        <g transform='translate(48, 0)'>
-            <rect x='0' y='0' width='10' height='10' rx='2' fill='#1f1a3a' stroke='#c084fc' stroke-width='0.5'/>
-            <circle cx='5' cy='5' r='2.8' fill='#c084fc'/>
+        <g transform='translate(39, 0)'>
+            <rect x='0' y='0' width='9' height='9' rx='2' fill='#1f1a3a' stroke='#c084fc' stroke-width='0.5'/>
+            <circle cx='4.5' cy='4.5' r='2.5' fill='#c084fc'/>
         </g>
-        <g transform='translate(64, 0)'>
-            <rect x='0' y='0' width='10' height='10' rx='2' fill='#2d1500' stroke='#ffd700' stroke-width='0.5'/>
-            <circle cx='5' cy='5' r='3.2' fill='#ffd700'/>
+        <g transform='translate(52, 0)'>
+            <rect x='0' y='0' width='9' height='9' rx='2' fill='#2d1500' stroke='#ffd700' stroke-width='0.5'/>
+            <circle cx='4.5' cy='4.5' r='2.8' fill='#ffd700'/>
         </g>
-        <text x='82' y='9' fill='#8b949e' font-size='10' font-family='-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif'>More</text>
+        <text x='68' y='8' fill='#8b949e' font-size='9' font-family='-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif'>More</text>
     </g>
-
-    <!-- Left Footer Note -->
-    <text x='48' y='{$legendY}' fill='#484f58' font-size='10' font-family='-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif'>
-        Authentic 368-Day Telemetry &#8226; Kinematic King Cobra Autonomous Engine
-    </text>
 </svg>
 SVG;
 }

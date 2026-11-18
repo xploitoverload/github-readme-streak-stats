@@ -538,6 +538,93 @@ function generateCard(array $stats, ?array $params = null): string
                 0% { opacity: 0; }
                 100% { opacity: 1; }
             }
+            /* Hyper-Realistic Living Flame Animations */
+            .flame-aura {
+                transform-origin: 0px 14px;
+                animation: auraPulse 1.8s ease-in-out infinite alternate;
+            }
+            @keyframes auraPulse {
+                0% { transform: scale(0.85) translateY(1px); opacity: 0.45; }
+                50% { transform: scale(1.2, 1.25) translateY(-1px); opacity: 0.85; }
+                100% { transform: scale(0.95, 1.05) translateY(0px); opacity: 0.55; }
+            }
+            .flame-outer {
+                transform-origin: 0px 22px;
+                animation: flameDance 1.25s ease-in-out infinite alternate;
+                filter: drop-shadow(0 0 3px rgba(242, 80, 34, 0.75));
+            }
+            @keyframes flameDance {
+                0% { transform: rotate(0deg) scale(1, 1); }
+                20% { transform: rotate(-2.5deg) scale(0.97, 1.05) skewX(-1.5deg); }
+                40% { transform: rotate(1.8deg) scale(1.03, 0.96) skewX(1deg); }
+                60% { transform: rotate(-1.2deg) scale(0.98, 1.03) skewX(-0.8deg); }
+                80% { transform: rotate(2.2deg) scale(1.02, 0.98) skewX(1.4deg); }
+                100% { transform: rotate(-0.5deg) scale(1.01, 1.02) skewX(-0.5deg); }
+            }
+            .flame-core {
+                transform-origin: 0px 19px;
+                animation: coreDance 0.8s ease-in-out infinite alternate;
+                filter: drop-shadow(0 0 2px rgba(255, 185, 0, 0.85));
+            }
+            @keyframes coreDance {
+                0% { transform: scale(1, 1) translateY(0); opacity: 0.9; }
+                30% { transform: scale(1.08, 0.93) translateY(0.5px) rotate(-1deg); opacity: 1; }
+                70% { transform: scale(0.92, 1.08) translateY(-0.8px) rotate(1.5deg); opacity: 0.82; }
+                100% { transform: scale(1.03, 0.98) translateY(0.2px) rotate(0deg); opacity: 0.95; }
+            }
+            .flame-heart {
+                transform-origin: 0.3px 15.2px;
+                animation: heartPulse 0.45s ease-in-out infinite alternate;
+            }
+            @keyframes heartPulse {
+                0% { transform: scale(0.8); opacity: 0.7; }
+                100% { transform: scale(1.3); opacity: 1; }
+            }
+            /* Crackling Rising Ember Sparks */
+            .spark-1 {
+                animation: sparkUp1 1.6s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+            }
+            @keyframes sparkUp1 {
+                0% { transform: translate(1px, 4px) scale(0.8); opacity: 0; }
+                15% { opacity: 1; }
+                55% { transform: translate(-4px, -8px) scale(0.7); opacity: 0.9; }
+                100% { transform: translate(-8px, -20px) scale(0.1); opacity: 0; }
+            }
+            .spark-2 {
+                animation: sparkUp2 2.1s cubic-bezier(0.25, 1, 0.5, 1) 0.5s infinite;
+            }
+            @keyframes sparkUp2 {
+                0% { transform: translate(-1px, 6px) scale(0.9); opacity: 0; }
+                20% { opacity: 1; }
+                60% { transform: translate(5px, -10px) scale(0.7); opacity: 0.85; }
+                100% { transform: translate(9px, -24px) scale(0.1); opacity: 0; }
+            }
+            .spark-3 {
+                animation: sparkUp3 1.3s cubic-bezier(0.25, 1, 0.5, 1) 0.9s infinite;
+            }
+            @keyframes sparkUp3 {
+                0% { transform: translate(0px, 2px) scale(1); opacity: 0; }
+                25% { opacity: 1; }
+                70% { transform: translate(2px, -7px) scale(0.6); opacity: 0.8; }
+                100% { transform: translate(-3px, -16px) scale(0.15); opacity: 0; }
+            }
+            .spark-4 {
+                animation: sparkUp4 1.9s cubic-bezier(0.25, 1, 0.5, 1) 0.3s infinite;
+            }
+            @keyframes sparkUp4 {
+                0% { transform: translate(2px, 5px) scale(0.7); opacity: 0; }
+                20% { opacity: 1; }
+                65% { transform: translate(-3px, -9px) scale(0.5); opacity: 0.75; }
+                100% { transform: translate(4px, -19px) scale(0.1); opacity: 0; }
+            }
+            .ring-heat {
+                animation: ringHeatGlow 2.5s ease-in-out infinite alternate;
+            }
+            @keyframes ringHeatGlow {
+                0% { filter: drop-shadow(0 0 1px {$theme["ring"]}); }
+                50% { filter: drop-shadow(0 0 4px {$theme["ring"]}); }
+                100% { filter: drop-shadow(0 0 1.5px {$theme["ring"]}); }
+            }
         </style>
         <defs>
             <clipPath id='outer_rectangle'>
@@ -547,6 +634,22 @@ function generateCard(array $stats, ?array $params = null): string
                 <rect width='{$cardWidth}' height='{$cardHeight}' fill='white'/>
                 <ellipse id='mask-ellipse' cx='{$currentStreakOffset}' cy='32' rx='13' ry='18' fill='black'/>
             </mask>
+            <!-- Dynamic Fire Gradients -->
+            <radialGradient id='flame-aura-grad' cx='50%' cy='55%' r='50%'>
+                <stop offset='0%' stop-color='{$theme["fire"]}' stop-opacity='0.6'/>
+                <stop offset='45%' stop-color='#FFA000' stop-opacity='0.25'/>
+                <stop offset='100%' stop-color='#FF5722' stop-opacity='0'/>
+            </radialGradient>
+            <linearGradient id='fire-outer-grad' x1='0%' y1='100%' x2='0%' y2='0%'>
+                <stop offset='0%' stop-color='{$theme["fire"]}'/>
+                <stop offset='45%' stop-color='#FF5722'/>
+                <stop offset='100%' stop-color='#FFB900'/>
+            </linearGradient>
+            <linearGradient id='fire-core-grad' x1='0%' y1='100%' x2='0%' y2='0%'>
+                <stop offset='0%' stop-color='#FF8C00'/>
+                <stop offset='50%' stop-color='#FFD700'/>
+                <stop offset='100%' stop-color='#FFFFE0'/>
+            </linearGradient>
             {$theme["backgroundGradient"]}
         </defs>
         <g clip-path='url(#outer_rectangle)'>
@@ -594,14 +697,35 @@ function generateCard(array $stats, ?array $params = null): string
                     </text>
                 </g>
 
-                <!-- Ring around number -->
+                <!-- Ring around number with radiant energy -->
                 <g mask='url(#mask_out_ring_behind_fire)'>
-                    <circle cx='{$currentStreakOffset}' cy='{$currentStreakHeightOffset[3]}' r='40' fill='none' stroke='{$theme["ring"]}' stroke-width='5' style='opacity: 0; animation: fadein 0.5s linear forwards 0.4s'></circle>
+                    <circle class='ring-heat' cx='{$currentStreakOffset}' cy='{$currentStreakHeightOffset[3]}' r='40' fill='none' stroke='{$theme["ring"]}' stroke-width='5' style='opacity: 0; animation: fadein 0.5s linear forwards 0.4s'></circle>
                 </g>
-                <!-- Fire icon -->
+                <!-- Fire icon with hyper-realistic living multi-layered flame & ember particles -->
                 <g transform='translate({$currentStreakOffset}, {$currentStreakHeightOffset[4]})' stroke-opacity='0' style='opacity: 0; animation: fadein 0.5s linear forwards 0.6s'>
                     <path d='M -12 -0.5 L 15 -0.5 L 15 23.5 L -12 23.5 L -12 -0.5 Z' fill='none'/>
-                    <path d='M 1.5 0.67 C 1.5 0.67 2.24 3.32 2.24 5.47 C 2.24 7.53 0.89 9.2 -1.17 9.2 C -3.23 9.2 -4.79 7.53 -4.79 5.47 L -4.76 5.11 C -6.78 7.51 -8 10.62 -8 13.99 C -8 18.41 -4.42 22 0 22 C 4.42 22 8 18.41 8 13.99 C 8 8.6 5.41 3.79 1.5 0.67 Z M -0.29 19 C -2.07 19 -3.51 17.6 -3.51 15.86 C -3.51 14.24 -2.46 13.1 -0.7 12.74 C 1.07 12.38 2.9 11.53 3.92 10.16 C 4.31 11.45 4.51 12.81 4.51 14.2 C 4.51 16.85 2.36 19 -0.29 19 Z' fill='{$theme["fire"]}' stroke-opacity='0'/>
+
+                    <!-- Radiant Heat Aura -->
+                    <ellipse class='flame-aura' cx='0' cy='12' rx='15' ry='17' fill='url(#flame-aura-grad)'/>
+
+                    <!-- Outer Dancing Flame -->
+                    <g class='flame-outer'>
+                        <path d='M 1.5 0.67 C 1.5 0.67 2.24 3.32 2.24 5.47 C 2.24 7.53 0.89 9.2 -1.17 9.2 C -3.23 9.2 -4.79 7.53 -4.79 5.47 L -4.76 5.11 C -6.78 7.51 -8 10.62 -8 13.99 C -8 18.41 -4.42 22 0 22 C 4.42 22 8 18.41 8 13.99 C 8 8.6 5.41 3.79 1.5 0.67 Z' fill='url(#fire-outer-grad)' stroke-opacity='0'/>
+                    </g>
+
+                    <!-- Inner Convection Flame Core -->
+                    <g class='flame-core'>
+                        <path d='M -0.29 19 C -2.07 19 -3.51 17.6 -3.51 15.86 C -3.51 14.24 -2.46 13.1 -0.7 12.74 C 1.07 12.38 2.9 11.53 3.92 10.16 C 4.31 11.45 4.51 12.81 4.51 14.2 C 4.51 16.85 2.36 19 -0.29 19 Z' fill='url(#fire-core-grad)' stroke-opacity='0'/>
+                    </g>
+
+                    <!-- White-Hot Incandescent Heart -->
+                    <ellipse class='flame-heart' cx='0.3' cy='15.2' rx='1.5' ry='2.3' fill='#FFFFFF' opacity='0.95'/>
+
+                    <!-- Crackling Rising Ember Sparks -->
+                    <circle class='spark-1' cx='0' cy='0' r='1.1' fill='#FFF176' opacity='0'/>
+                    <circle class='spark-2' cx='0' cy='0' r='0.9' fill='#FFB900' opacity='0'/>
+                    <circle class='spark-3' cx='0' cy='0' r='1.3' fill='#FFA000' opacity='0'/>
+                    <circle class='spark-4' cx='0' cy='0' r='0.7' fill='#FFFFFF' opacity='0'/>
                 </g>
 
                 <!-- Current Streak big number -->

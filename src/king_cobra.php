@@ -5,8 +5,9 @@ declare(strict_types=1);
 /**
  * Generate a standalone animated SVG of the King Cobra Contribution Predator.
  * Renders the user's authentic contribution calendar matrix without extraneous banners,
- * where an articulated hooded King Cobra actively hunts, eats, and empties fancy glowing meals
- * across the grid, leaving clean empty cells in its wake.
+ * where a thick, realistic, hooded King Cobra glides in a majestic flowing prowl,
+ * devours fancy glowing meals, visibly grows longer and bigger as it feeds,
+ * and leaves cleanly emptied contribution cells in its wake.
  *
  * @param array<int,array{date:string,count:int,level:int}> $days Array of daily contributions
  * @param array<string,mixed> $params Options
@@ -38,16 +39,16 @@ function renderKingCobra(array $days, array $params = []): string
         return [$x, $y];
     };
 
-    // Full serpentine hunting sweep waypoints across the grid:
-    // Forward sweep left-to-right (upper/mid rows), turnaround, backward sweep right-to-left (lower rows)
+    // Majestic flowing prowl path (continuous natural serpentine sweeps, no frantic up-and-down)
     $waypointsGrid = [
-        [0, 1], [4, 3], [8, 1], [12, 0], [16, 2], [20, 3],
-        [24, 1], [28, 0], [32, 2], [36, 3], [40, 1], [44, 0],
-        [48, 2], [52, 2],
-        [52, 4], [51, 6],
-        [48, 5], [44, 6], [40, 4], [36, 6], [32, 5], [28, 4],
-        [24, 6], [20, 5], [16, 4], [12, 6], [8, 5], [4, 4], [0, 6],
-        [0, 4], [0, 1]
+        // Top sweep across cols 0 -> 52 along rows 1.5 - 2.0
+        [1.0, 1.8], [8.0, 1.5], [16.0, 2.0], [24.0, 1.6], [32.0, 2.0], [40.0, 1.6], [46.0, 2.0], [50.0, 1.8],
+        // Wide majestic turnaround at right edge
+        [52.5, 2.8], [53.0, 4.0], [51.0, 5.2],
+        // Bottom sweep across cols 50 -> 0 along rows 4.6 - 5.0
+        [46.0, 5.0], [38.0, 4.6], [30.0, 5.0], [22.0, 4.6], [14.0, 5.0], [6.0, 4.6], [2.0, 5.0],
+        // Wide majestic turnaround at left edge
+        [0.0, 4.2], [-0.5, 2.8], [1.0, 1.8],
     ];
 
     $waypoints = [];
@@ -56,7 +57,7 @@ function renderKingCobra(array $days, array $params = []): string
     }
 
     $numWp = count($waypoints) - 1;
-    $stepsPerSeg = 5;
+    $stepsPerSeg = 6;
     $rawPoints = [];
 
     for ($i = 0; $i < $numWp; $i++) {
@@ -73,7 +74,7 @@ function renderKingCobra(array $days, array $params = []): string
     $totalFrames = count($rawPoints);
     $trajectory = [];
 
-    // Calculate heading angle and sinuous lateral slither wave
+    // Calculate heading angle and fluid lateral slither wave
     for ($i = 0; $i < $totalFrames; $i++) {
         $curr = $rawPoints[$i];
         $next = $rawPoints[($i + 1) % $totalFrames];
@@ -81,8 +82,9 @@ function renderKingCobra(array $days, array $params = []): string
         $dy = $next[1] - $curr[1];
         $angle = rad2deg(atan2($dy, $dx));
 
-        $waveAngle = 2 * M_PI * ($i / (float) $totalFrames) * 10;
-        $slitherOffset = sin($waveAngle) * 3.0;
+        // Lateral slither wave (8 undulation cycles)
+        $waveAngle = 2 * M_PI * ($i / (float) $totalFrames) * 8;
+        $slitherOffset = sin($waveAngle) * 3.2;
 
         $dist = hypot($dx, $dy);
         if ($dist > 0.001) {
@@ -95,13 +97,13 @@ function renderKingCobra(array $days, array $params = []): string
 
         $x = $curr[0] + $perpX;
         $y = $curr[1] + $perpY;
-        $headSway = cos($waveAngle) * 7.0;
+        $headSway = cos($waveAngle) * 6.0;
         $totalAngle = $angle + $headSway;
 
         $trajectory[] = [round($x, 1), round($y, 1), round($totalAngle, 1)];
     }
 
-    // Identify all active meals eaten and emptied along the Cobra's hunting path
+    // Identify all active meals eaten and emptied along the Cobra's path
     $eatenCells = [];
     foreach ($trajectory as $frameIdx => $tPos) {
         $pct = round(($frameIdx / (float) $totalFrames) * 100, 2);
@@ -117,14 +119,25 @@ function renderKingCobra(array $days, array $params = []): string
             $cy = $gridY0 + $r * $step + 5.5;
             $dist = hypot($px - $cx, $py - $cy);
             $mid = "meal_{$c}_{$r}";
-            if ($dist <= 11.5 && !isset($eatenCells[$mid])) {
+            if ($dist <= 12.0 && !isset($eatenCells[$mid])) {
                 $eatenCells[$mid] = [$pct, $cx, $cy];
             }
         }
     }
 
-    // CSS Keyframe Generation
-    $numSegments = 8;
+    // 14 Vertebrae Segments with Progressive Growth (Getting bigger like flow!)
+    $numSegments = 14;
+    $growthTimes = [
+        7 => 18.0,
+        8 => 24.0,
+        9 => 38.0,
+        10 => 45.0,
+        11 => 58.0,
+        12 => 66.0,
+        13 => 76.0,
+        14 => 82.0,
+    ];
+
     $cssParts = [];
 
     // 1. King Cobra Head Motion Keyframes
@@ -138,15 +151,31 @@ function renderKingCobra(array $days, array $params = []): string
     $headKf[] = "}";
     $cssParts[] = implode("\n", $headKf);
 
-    // 2. Trailing Vertebrae / Body Segments Keyframes
+    // 2. Trailing Vertebrae / Body Segments Keyframes with Dynamic Growth
     for ($seg = 1; $seg <= $numSegments; $seg++) {
         $segKf = ["@keyframes cobraSeg{$seg}Move {"];
-        $delayFrames = $seg * 2;
+        $delayFrames = (int) round($seg * 1.3);
+        $tGrow = $growthTimes[$seg] ?? 0.0;
+
         for ($i = 0; $i <= $totalFrames; $i++) {
             $pct = round(($i / (float) $totalFrames) * 100, 2);
             $idx = ($i - $delayFrames + $totalFrames * 10) % $totalFrames;
             [$x, $y, $ang] = $trajectory[$idx];
-            $segKf[] = "  {$pct}% { transform: translate({$x}px, {y}px) rotate({$ang}deg); }";
+
+            if ($tGrow > 0) {
+                if ($pct < $tGrow - 1.0) {
+                    $segKf[] = "  {$pct}% { transform: translate({$x}px, {$y}px) rotate({$ang}deg) scale(0.01); opacity: 0; }";
+                } elseif ($pct < $tGrow) {
+                    $scaleVal = round($pct - ($tGrow - 1.0), 2);
+                    $segKf[] = "  {$pct}% { transform: translate({$x}px, {$y}px) rotate({$ang}deg) scale({$scaleVal}); opacity: {$scaleVal}; }";
+                } elseif ($pct <= 99.4) {
+                    $segKf[] = "  {$pct}% { transform: translate({$x}px, {$y}px) rotate({$ang}deg) scale(1); opacity: 1; }";
+                } else {
+                    $segKf[] = "  {$pct}% { transform: translate({$x}px, {$y}px) rotate({$ang}deg) scale(0.01); opacity: 0; }";
+                }
+            } else {
+                $segKf[] = "  {$pct}% { transform: translate({$x}px, {$y}px) rotate({$ang}deg); opacity: 1; }";
+            }
         }
         $segKf[] = "}";
         $cssParts[] = implode("\n", $segKf);
@@ -236,44 +265,64 @@ CSS;
         }
     }
 
-    // Segments Art
+    // 14 Muscular Banded Segments (Heavy overlap, thick serpent flow)
     $segRadii = [
-        [6.0, 5.0],
-        [5.8, 4.8],
-        [5.5, 4.5],
-        [5.0, 4.2],
-        [4.6, 3.8],
-        [4.0, 3.4],
-        [3.5, 3.0],
-        [2.8, 2.4],
+        [12.0, 9.5], // 1 (Neck)
+        [11.5, 9.0], // 2
+        [11.0, 8.5], // 3
+        [10.5, 8.2], // 4
+        [10.0, 8.0], // 5
+        [9.5, 7.8],  // 6
+        [9.0, 7.5],  // 7
+        [8.5, 7.0],  // 8
+        [8.0, 6.5],  // 9
+        [7.5, 6.0],  // 10
+        [7.0, 5.5],  // 11
+        [6.2, 5.0],  // 12
+        [5.5, 4.4],  // 13
+        [4.5, 3.6],  // 14 (Rattle Tail)
     ];
 
     $segmentsSvg = [];
     for ($sIdx = $numSegments; $sIdx >= 1; $sIdx--) {
         [$rx, $ry] = $segRadii[$sIdx - 1];
         $isTail = ($sIdx === $numSegments);
+        $isBanded = ($sIdx % 2 === 0);
+
+        $bandSvg = "";
+        if ($isBanded && !$isTail) {
+            $bandX = -$rx * 0.5;
+            $bandY = $ry * 0.75;
+            $negBandY = -$ry * 0.75;
+            $bandSvg = "<path d='M {$bandX}, {$negBandY} Q 0,0 {$bandX}, {$bandY}' fill='none' stroke='#ffd700' stroke-width='2' stroke-linecap='round'/>";
+        }
 
         if ($isTail) {
             $negRx = -$rx;
-            $p2X = -$rx - 6;
-            $p3X = -$rx - 8;
+            $p2X = -$rx - 7;
+            $p3X = -$rx - 10;
             $segmentsSvg[] = "<g id='cobra-seg-{$sIdx}' class='cobra-seg-{$sIdx}'>
-                <ellipse cx='0' cy='0' rx='{$rx}' ry='{$ry}' fill='url(#segGrad)' stroke='#ffaa00' stroke-width='0.8'/>
-                <polygon points='{$negRx},0 {$p2X},-2 {$p3X},0 {$p2X},2' fill='#ffd700' stroke='#ff3344' stroke-width='0.5'/>
+                <ellipse cx='0' cy='0' rx='{$rx}' ry='{$ry}' fill='url(#segGrad)' stroke='#ffd700' stroke-width='0.9'/>
+                <polygon points='{$negRx},0 {$p2X},-2.5 {$p3X},0 {$p2X},2.5' fill='#ffd700' stroke='#ff3344' stroke-width='0.6'/>
             </g>";
         } else {
-            $spineX1 = -$rx * 0.7;
-            $spineX2 = $rx * 0.7;
-            $circleCy = -$ry * 0.4;
+            $spineX1 = -$rx * 0.6;
+            $spineX2 = $rx * 0.6;
             $segmentsSvg[] = "<g id='cobra-seg-{$sIdx}' class='cobra-seg-{$sIdx}'>
-                <ellipse cx='0' cy='0' rx='{$rx}' ry='{$ry}' fill='url(#segGrad)' stroke='#ff3344' stroke-width='0.8'/>
-                <line x1='{$spineX1}' y1='0' x2='{$spineX2}' y2='0' stroke='#00ff88' stroke-width='1.2' stroke-linecap='round'/>
-                <circle cx='0' cy='{$circleCy}' r='1' fill='#ffffff' opacity='0.4'/>
+                <ellipse cx='0' cy='0' rx='{$rx}' ry='{$ry}' fill='url(#segGrad)' stroke='#ff3344' stroke-width='0.9'/>
+                {$bandSvg}
+                <line x1='{$spineX1}' y1='0' x2='{$spineX2}' y2='0' stroke='#00ff88' stroke-width='1.4' stroke-linecap='round'/>
             </g>";
         }
     }
 
+    $segCssRules = [];
+    for ($s = 1; $s <= $numSegments; $s++) {
+        $segCssRules[] = ".cobra-seg-{$s} { animation: cobraSeg{$s}Move 20s linear infinite; }";
+    }
+
     $allCss = implode("\n", $cssParts);
+    $segRules = implode("\n", $segCssRules);
     $monthsRendered = implode("", $monthSvg);
     $weekdaysRendered = implode("", $weekdaySvg);
     $cellsRendered = implode("", $cellsSvg);
@@ -317,7 +366,7 @@ CSS;
             50% { transform: scaleX(0.1); opacity: 0; }
         }
         .cobra-tongue {
-            transform-origin: 18px 0px;
+            transform-origin: 26px 0px;
             animation: tongueFlutter 0.75s ease-in-out infinite;
         }
         @keyframes orbBreathe {
@@ -355,14 +404,7 @@ CSS;
         .cobra-head {
             animation: cobraHeadMove 20s linear infinite;
         }
-        .cobra-seg-1 { animation: cobraSeg1Move 20s linear infinite; }
-        .cobra-seg-2 { animation: cobraSeg2Move 20s linear infinite; }
-        .cobra-seg-3 { animation: cobraSeg3Move 20s linear infinite; }
-        .cobra-seg-4 { animation: cobraSeg4Move 20s linear infinite; }
-        .cobra-seg-5 { animation: cobraSeg5Move 20s linear infinite; }
-        .cobra-seg-6 { animation: cobraSeg6Move 20s linear infinite; }
-        .cobra-seg-7 { animation: cobraSeg7Move 20s linear infinite; }
-        .cobra-seg-8 { animation: cobraSeg8Move 20s linear infinite; }
+        {$segRules}
 
         {$allCss}
     </style>
@@ -384,34 +426,33 @@ CSS;
 
     <!-- ================= THE LIVING KING COBRA ================= -->
     <g id='king-cobra-group'>
-        <!-- Body Segments (rendered back to front) -->
+        <!-- Body Segments (rendered back to front for scale layering) -->
         {$segmentsRendered}
         
-        <!-- Hooded Head with Glowing Eyes & Fangs -->
+        <!-- Authentic Flared King Cobra Hood & Head (34px wide) -->
         <g id='cobra-head' class='cobra-head'>
-            <!-- Flared Lateral Cobra Hood -->
-            <path d='M -14,-3 C -12,-11 -5,-14 4,-10 C 9,-7 15,-4 18,0 C 15,4 9,7 4,10 C -5,14 -12,11 -14,3 Z' fill='url(#hoodGrad)' stroke='#ff3344' stroke-width='1.4' stroke-linejoin='round'/>
+            <path d='M -16,-6 C -14,-15 -6,-18 5,-12 C 13,-8 22,-4 26,0 C 22,4 13,8 5,12 C -6,18 -14,15 -16,6 Z' fill='url(#hoodGrad)' stroke='#ff3344' stroke-width='1.5' stroke-linejoin='round'/>
             
-            <!-- Iconic Cobra Hood Chevron Spectacle Mark -->
-            <path d='M -6,-5 Q -2,0 -6,5 M -2,-3 Q 2,0 -2,3' fill='none' stroke='#ffd700' stroke-width='1.5' stroke-linecap='round'/>
-            
-            <!-- Snout & Jaw Ridge -->
-            <path d='M 4,-7 L 16,-3 L 19,0 L 16,3 L 4,7' fill='none' stroke='#00ff88' stroke-width='0.9'/>
-            
-            <!-- Glowing Ruby Predatory Eyes -->
-            <circle cx='10' cy='-4.5' r='2.2' fill='#ff0044' filter='url(#eyeGlow)'/>
-            <circle cx='10' cy='4.5' r='2.2' fill='#ff0044' filter='url(#eyeGlow)'/>
-            <!-- Slit Pupils -->
-            <line x1='10' y1='-5.8' x2='10' y2='-3.2' stroke='#110000' stroke-width='0.9' stroke-linecap='round'/>
-            <line x1='10' y1='3.2' x2='10' y2='5.8' stroke='#110000' stroke-width='0.9' stroke-linecap='round'/>
-            
+            <!-- Iconic Chevron Spectacle Hood Emblem -->
+            <path d='M -8,-7 Q -2,0 -8,7 M -3,-5 Q 3,0 -3,5' fill='none' stroke='#ffd700' stroke-width='2' stroke-linecap='round'/>
+            <circle cx='0' cy='0' r='1.8' fill='#ffd700'/>
+
+            <!-- Snout & Crown Ridge -->
+            <path d='M 6,-9 L 22,-4 L 27,0 L 22,4 L 6,9' fill='none' stroke='#00ff88' stroke-width='1.2'/>
+
+            <!-- Glowing Ruby Predatory Eyes with Slit Pupils -->
+            <circle cx='14' cy='-5.5' r='2.5' fill='#ff0044' filter='url(#eyeGlow)'/>
+            <circle cx='14' cy='5.5' r='2.5' fill='#ff0044' filter='url(#eyeGlow)'/>
+            <line x1='14' y1='-7' x2='14' y2='-4' stroke='#000000' stroke-width='1.2' stroke-linecap='round'/>
+            <line x1='14' y1='4' x2='14' y2='7' stroke='#000000' stroke-width='1.2' stroke-linecap='round'/>
+
             <!-- Dual Razor Fangs -->
-            <polygon points='16,-2.5 20,-3 17.5,-1.2' fill='#ffffff'/>
-            <polygon points='16,2.5 20,3 17.5,1.2' fill='#ffffff'/>
-            
-            <!-- Active Darting Bifurcated Venom Tongue -->
+            <polygon points='22,-3 27,-4 24,-1.5' fill='#ffffff'/>
+            <polygon points='22,3 27,4 24,1.5' fill='#ffffff'/>
+
+            <!-- Darting Bifurcated Venom Tongue -->
             <g class='cobra-tongue'>
-                <path d='M 18,0 L 26,0 L 30,-3.5 M 26,0 L 30,3.5' fill='none' stroke='#ff0044' stroke-width='1.3' stroke-linecap='round'/>
+                <path d='M 26,0 L 36,0 L 42,-4 M 36,0 L 42,4' fill='none' stroke='#ff0044' stroke-width='1.6' stroke-linecap='round'/>
             </g>
         </g>
     </g>

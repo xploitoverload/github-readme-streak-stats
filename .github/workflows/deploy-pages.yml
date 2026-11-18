@@ -1,0 +1,161 @@
+name: Deploy Streak Stats to GitHub Pages
+
+on:
+  schedule:
+    # Run every 6 hours to keep streak and contribution stats updated
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/deploy-pages.yml'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: intl, curl
+          coverage: none
+
+      - name: Install Dependencies
+        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Create Build Directory
+        run: mkdir -p build
+
+      - name: Generate Streak Cards
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 1. Default Streak Card
+          php bin/generate-card.php --options="user=xploitoverload" --path="build/streak.svg"
+          
+          # 2. Dark Theme
+          php bin/generate-card.php --options="user=xploitoverload&theme=dark" --path="build/streak-dark.svg"
+          
+          # 3. Radical Theme
+          php bin/generate-card.php --options="user=xploitoverload&theme=radical" --path="build/streak-radical.svg"
+          
+          # 4. Custom CX330 The Star Tactical Red/Black Theme
+          php bin/generate-card.php --options="user=xploitoverload&background=0a0a0a&border=e50914&stroke=e50914&ring=e50914&fire=e50914&currStreakNum=ffffff&sideNums=ffffff&currStreakLabel=e50914&sideLabels=cccccc&dates=888888" --path="build/streak-cx330.svg"
+
+      - name: Generate Landing Page
+        run: |
+          cat << 'EOF' > build/index.html
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Kalpesh Solanki | GitHub Streak Stats</title>
+            <style>
+              body {
+                background-color: #0d1117;
+                color: #c9d1d9;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+                margin: 0;
+                padding: 40px 20px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+              }
+              h1 { color: #f85149; margin-bottom: 8px; font-size: 28px; }
+              p.subtitle { color: #8b949e; margin-top: 0; margin-bottom: 30px; text-align: center; }
+              .card-container {
+                display: flex;
+                flex-direction: column;
+                gap: 25px;
+                max-width: 800px;
+                width: 100%;
+                align-items: center;
+              }
+              .card-box {
+                background: #161b22;
+                border: 1px solid #30363d;
+                border-radius: 8px;
+                padding: 20px;
+                width: 100%;
+                box-sizing: border-box;
+                text-align: center;
+              }
+              .card-box h3 { margin-top: 0; color: #58a6ff; font-size: 18px; }
+              img.streak-card { max-width: 100%; height: auto; }
+              .code-block {
+                margin-top: 15px;
+                background: #0a0a0a;
+                border: 1px solid #21262d;
+                border-radius: 6px;
+                padding: 10px;
+                font-family: monospace;
+                font-size: 13px;
+                color: #7ee787;
+                overflow-x: auto;
+                text-align: left;
+                word-break: break-all;
+              }
+            </style>
+          </head>
+          <body>
+            <h1>Kalpesh Solanki (CX330) Streak Telemetry</h1>
+            <p class="subtitle">Autonomous GitHub Readme Streak Stats hosted directly on GitHub Pages.</p>
+            
+            <div class="card-container">
+              <div class="card-box">
+                <h3>[0x01] CX330 Custom Tactical Red/Dark</h3>
+                <img class="streak-card" src="streak-cx330.svg" alt="CX330 Streak Stats">
+                <div class="code-block">[![CX330 Streak Stats](https://xploitoverload.github.io/github-readme-streak-stats/streak-cx330.svg)](https://github.com/xploitoverload)</div>
+              </div>
+
+              <div class="card-box">
+                <h3>[0x02] Dark Theme</h3>
+                <img class="streak-card" src="streak-dark.svg" alt="Dark Streak Stats">
+                <div class="code-block">[![Dark Streak Stats](https://xploitoverload.github.io/github-readme-streak-stats/streak-dark.svg)](https://github.com/xploitoverload)</div>
+              </div>
+
+              <div class="card-box">
+                <h3>[0x03] Radical Theme</h3>
+                <img class="streak-card" src="streak-radical.svg" alt="Radical Streak Stats">
+                <div class="code-block">[![Radical Streak Stats](https://xploitoverload.github.io/github-readme-streak-stats/streak-radical.svg)](https://github.com/xploitoverload)</div>
+              </div>
+
+              <div class="card-box">
+                <h3>[0x04] Default Card</h3>
+                <img class="streak-card" src="streak.svg" alt="Default Streak Stats">
+                <div class="code-block">[![Streak Stats](https://xploitoverload.github.io/github-readme-streak-stats/streak.svg)](https://github.com/xploitoverload)</div>
+              </div>
+            </div>
+          </body>
+          </html>
+          EOF
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './build'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -132,11 +132,7 @@
       width: 7px;
       background: linear-gradient(to top, #e50914, #ff5f56);
       border-radius: 4px 4px 0 0;
-      height: 8px;
-      transition: height 0.08s ease;
-    }
-
-    .eq-bar.active {
+      height: 12px;
       animation: eqDance 0.8s infinite ease-in-out alternate;
     }
 
@@ -149,40 +145,6 @@
     @keyframes eqDance {
       0% { height: 8px; }
       100% { height: 48px; }
-    }
-
-    /* Prominent Call-to-Action Play Bar when autoplay is blocked */
-    .autoplay-notice {
-      display: none;
-      width: 100%;
-      background: rgba(229, 9, 20, 0.15);
-      border: 1px solid #e50914;
-      border-radius: 8px;
-      padding: 14px 18px;
-      margin-bottom: 20px;
-      text-align: center;
-      cursor: pointer;
-      animation: pulseBtn 1.8s infinite ease-in-out;
-    }
-    .autoplay-notice.visible {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-    @keyframes pulseBtn {
-      0%, 100% { box-shadow: 0 0 15px rgba(229, 9, 20, 0.4); }
-      50% { box-shadow: 0 0 30px rgba(229, 9, 20, 0.8); }
-    }
-    .autoplay-notice span.icon {
-      font-size: 20px;
-      color: #e50914;
-    }
-    .autoplay-notice span.text {
-      font-size: 14px;
-      font-weight: 800;
-      color: #ffffff;
-      letter-spacing: 0.5px;
     }
 
     /* Player Controls */
@@ -363,13 +325,7 @@
         <div class="eq-bar"></div>
       </div>
 
-      <!-- Fallback Action Button if autoplay is held back -->
-      <div class="autoplay-notice" id="autoplayNotice" onclick="togglePlay()">
-        <span class="icon">▶</span>
-        <span class="text">CLICK TO START PLAYBACK (GT350)</span>
-      </div>
-
-      <!-- Native HTML5 Audio with autoplay -->
+      <!-- Native HTML5 Audio with immediate autoplay -->
       <audio id="audioPlayer" src="gt350.mp3" autoplay preload="auto" loop></audio>
 
       <!-- Player Controls -->
@@ -379,7 +335,7 @@
         </div>
         <div class="time-info">
           <span id="currTime">0:00</span>
-          <span id="durTime">--:--</span>
+          <span id="durTime">2:32</span>
         </div>
 
         <div class="playback-row">
@@ -390,8 +346,8 @@
           
           <div class="vol-control">
             <span id="volIcon">🔊</span>
-            <input type="range" class="vol-slider" min="0" max="1" step="0.05" value="0.9" oninput="setVol(this.value)">
-            <span id="volVal">90%</span>
+            <input type="range" class="vol-slider" min="0" max="1" step="0.05" value="0.95" oninput="setVol(this.value)">
+            <span id="volVal">95%</span>
           </div>
         </div>
       </div>
@@ -420,12 +376,10 @@
     const currTime = document.getElementById('currTime');
     const durTime = document.getElementById('durTime');
     const statusText = document.getElementById('statusText');
-    const autoplayNotice = document.getElementById('autoplayNotice');
-    const eqBars = document.querySelectorAll('.eq-bar');
     const volVal = document.getElementById('volVal');
     const volIcon = document.getElementById('volIcon');
 
-    let isAudioPlaying = false;
+    audio.volume = 0.95;
 
     function formatTime(s) {
       if (isNaN(s)) return '0:00';
@@ -434,57 +388,30 @@
       return m + ':' + (sec < 10 ? '0' : '') + sec;
     }
 
-    function setVisualizerActive(active) {
-      eqBars.forEach(bar => {
-        if (active) bar.classList.add('active');
-        else bar.classList.remove('active');
-      });
-    }
-
     function updatePlayState(playing) {
-      isAudioPlaying = playing;
       if (playing) {
         playIcon.textContent = '❚❚';
         playLabel.textContent = 'PAUSE';
-        setVisualizerActive(true);
         statusText.innerHTML = 'PLAYING // 8250 RPM';
-        autoplayNotice.classList.remove('visible');
       } else {
         playIcon.textContent = '▶';
         playLabel.textContent = 'PLAY';
-        setVisualizerActive(false);
         statusText.innerHTML = 'PAUSED';
       }
     }
 
-    // Aggressive Auto-Ignition Engine:
-    // Retries playback immediately, on visibility changes, on focus, and on user activation
-    function tryPlay() {
-      if (!audio.paused) {
+    function doPlay() {
+      if (!audio.paused) return;
+      audio.play().then(() => {
         updatePlayState(true);
-        return;
-      }
-      audio.volume = 0.9;
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.then(() => {
-          updatePlayState(true);
-        }).catch(err => {
-          // If browser restricts unmuted autoplay when tab is in background or lacks gesture
-          updatePlayState(false);
-          statusText.innerHTML = 'READY &bull; CLICK TO PLAY';
-          autoplayNotice.classList.add('visible');
-        });
-      }
+      }).catch(e => {
+        // Continue attempting on buffer ready
+      });
     }
 
     function togglePlay() {
       if (audio.paused) {
-        audio.play().then(() => {
-          updatePlayState(true);
-        }).catch(err => {
-          console.warn('Playback error:', err);
-        });
+        audio.play().then(() => updatePlayState(true));
       } else {
         audio.pause();
         updatePlayState(false);
@@ -514,7 +441,11 @@
 
     audio.addEventListener('loadedmetadata', () => {
       durTime.textContent = formatTime(audio.duration);
+      doPlay();
     });
+
+    audio.addEventListener('canplay', doPlay);
+    audio.addEventListener('canplaythrough', doPlay);
 
     function seek(e) {
       const container = document.getElementById('progressContainer');
@@ -524,41 +455,33 @@
       audio.currentTime = (clickX / width) * audio.duration;
     }
 
-    // 1. Immediate trigger on initial script run
-    tryPlay();
+    // Force play on every lifecycle trigger
+    doPlay();
+    document.addEventListener('DOMContentLoaded', doPlay);
+    window.addEventListener('load', doPlay);
 
-    // 2. Trigger on DOMContentLoaded and load
-    document.addEventListener('DOMContentLoaded', tryPlay);
-    window.addEventListener('load', tryPlay);
-
-    // 3. Trigger immediately when user switches to tab from background (Ctrl+Click support)
+    // Visibility / Focus triggers
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) {
-        tryPlay();
-      }
+      if (!document.hidden) doPlay();
     });
-    window.addEventListener('focus', tryPlay);
-    window.addEventListener('pageshow', tryPlay);
+    window.addEventListener('focus', doPlay);
+    window.addEventListener('pageshow', doPlay);
 
-    // 4. Trigger on any user interaction with the window/tab
-    ['click', 'pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(evt => {
+    // Global interaction fallback (single touch / mousemove / scroll fires it instantly)
+    ['pointerdown', 'mousedown', 'keydown', 'touchstart', 'scroll', 'mousemove'].forEach(evt => {
       window.addEventListener(evt, () => {
-        if (audio.paused) {
-          tryPlay();
-        }
-      }, { passive: true });
+        if (audio.paused) doPlay();
+      }, { once: false, passive: true });
     });
 
-    // 5. Short polling retry loop for 4 seconds to catch browser activation
-    let retries = 0;
-    const retryTimer = setInterval(() => {
-      retries++;
-      if (!audio.paused || retries > 16) {
-        clearInterval(retryTimer);
+    // Persistent loop until audio is actively running
+    const keepPlaying = setInterval(() => {
+      if (!audio.paused) {
+        clearInterval(keepPlaying);
       } else {
-        tryPlay();
+        doPlay();
       }
-    }, 250);
+    }, 150);
   </script>
 </body>
 </html>

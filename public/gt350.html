@@ -283,6 +283,35 @@
     .footer-status span {
       color: #39d353;
     }
+
+    .btn-launch-window {
+      background: linear-gradient(135deg, #e50914 0%, #b80710 100%);
+      color: #ffffff;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 800;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      letter-spacing: 0.5px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 25px rgba(229, 9, 20, 0.6), 0 4px 15px rgba(0,0,0,0.5);
+      transition: all 0.2s ease;
+      cursor: pointer;
+      text-transform: uppercase;
+      animation: pulseGlow 1.8s infinite alternate;
+    }
+    .btn-launch-window:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 0 35px rgba(229, 9, 20, 0.9), 0 8px 25px rgba(0,0,0,0.6);
+      background: linear-gradient(135deg, #ff1a26 0%, #e50914 100%);
+    }
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 15px rgba(229, 9, 20, 0.4); }
+      100% { box-shadow: 0 0 30px rgba(229, 9, 20, 0.85); }
+    }
   </style>
 </head>
 <body>
@@ -302,6 +331,15 @@
       <div class="track-tag">High Octane System Audio</div>
       <h1 class="track-name">GT350</h1>
       <div class="artist-name">Artist: <strong>Jake Hill</strong> &bull; V8 Shelby Redline Protocol</div>
+
+      <!-- Open Perfect New Window -->
+      <div style="margin-bottom: 22px; width: 100%; text-align: center;">
+        <a href="https://www.youtube.com/watch?v=zzIKp5CHn-0" 
+           onclick="openCenteredWindow(this.href); return false;" 
+           class="btn-launch-window">
+          <span>⚡</span> Open Perfect New Window (GT350 YouTube)
+        </a>
+      </div>
 
       <!-- Equalizer Visualizer -->
       <div class="visualizer" id="visualizer">
@@ -368,6 +406,16 @@
   </div>
 
   <script>
+    function openCenteredWindow(url) {
+      const width = 800;
+      const height = 600;
+      const left = (window.screen.width - width) / 2;
+      const top = (window.screen.height - height) / 2;
+
+      const features = `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes,noopener,noreferrer`;
+      
+      return window.open(url, 'perfectWindow', features);
+    }
     const audio = document.getElementById('audioPlayer');
     const playBtn = document.getElementById('playBtn');
     const playIcon = document.getElementById('playIcon');

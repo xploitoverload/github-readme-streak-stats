@@ -10,10 +10,11 @@ declare(strict_types=1);
  * until the entire board is 100% cleared.
  *
  * Once the board is completely emptied, the contribution cells themselves light up as a glowing
- * digital LED dot-matrix display, sequentially spelling out in single frames:
+ * digital LED dot-matrix display, sequentially spelling out in 5-row bold typography:
  * 1. "HACK THE PLANET" (Matrix Cyber Green - with perfected 4-column N)
  * 2. "ALMIGHTY PUSH" (Shinra Tensei Electric Cyan)
- * 3. "NEVER LET THEM OWN YOUR STORY" (Single Frame: Top line Cyber Gold + Bottom line Matrix Emerald)
+ * 3. "NEVER LET THEM" (Cyberpunk Amber Gold)
+ * 4. "OWN YOUR STORY" (King Cobra Neon Emerald)
  * Before cleanly replenishing back to authentic contributions for the next cycle.
  *
  * @param array<int,array{date:string,count:int,level:int}> $days Array of daily contributions
@@ -29,9 +30,9 @@ function renderKingCobra(array $days, array $params = []): string
 
     $svgWidth = 890;
     $svgHeight = 175;
-    $duration = 30.0; // 30 seconds total cycle
+    $duration = 32.0; // 32 seconds total cycle (16s cobra prowl + 16s sequential text)
 
-    // 5-row tall dot-matrix pixel font (for HACK THE PLANET and ALMIGHTY PUSH)
+    // Bold 5-row tall dot-matrix pixel font (rows 1 to 5, centered vertically)
     $font5 = [
         'A' => ["###", "# #", "###", "# #", "# #"],
         'C' => ["###", "#  ", "#  ", "#  ", "###"],
@@ -50,7 +51,7 @@ function renderKingCobra(array $days, array $params = []): string
         'T' => ["###", " # ", " # ", " # ", " # "],
         'U' => ["# #", "# #", "# #", "# #", "###"],
         'V' => ["# #", "# #", "# #", "# #", " # "],
-        'W' => ["#   #", "#   #", "# # #", "## ##", "#   #"],
+        'W' => ["#   #", "#   #", "# # #", "## ##", "#   #"], // 5-column wide W
         'Y' => ["# #", "# #", "###", " # ", " # "],
         ' ' => [" ", " ", " ", " ", " "],
     ];
@@ -85,64 +86,10 @@ function renderKingCobra(array $days, array $params = []): string
         return $grid;
     };
 
-    // 3-row compact font (for single-frame dual-line "NEVER LET THEM OWN YOUR STORY")
-    $font3 = [
-        'A' => ["###", "# #", "###"],
-        'B' => ["## ", "###", "## "],
-        'C' => ["###", "#  ", "###"],
-        'D' => ["## ", "# #", "## "],
-        'E' => ["###", "## ", "###"],
-        'H' => ["# #", "###", "# #"],
-        'I' => ["#", "#", "#"],
-        'L' => ["#  ", "#  ", "###"],
-        'M' => ["#   #", "#####", "# # #"],
-        'N' => ["#  #", "## #", "# ##"], // 4-column diagonal N
-        'O' => ["###", "# #", "###"],
-        'P' => ["###", "###", "#  "],
-        'R' => ["###", "## ", "# #"],
-        'S' => [" ##", " # ", "## "],
-        'T' => ["###", " # ", " # "],
-        'U' => ["# #", "# #", "###"],
-        'V' => ["# #", "# #", " # "],
-        'W' => ["#   #", "# # #", " # # "],
-        'Y' => ["# #", " # ", " # "],
-        ' ' => ["  ", "  ", "  "]
-    ];
-
-    $render3Line = function (string $text, int $rowStart) use ($font3): array {
-        $chars = str_split(strtoupper($text));
-        $w = 0;
-        foreach ($chars as $i => $ch) {
-            $pat = $font3[$ch] ?? ["   ", "   ", "   "];
-            $w += strlen($pat[0]);
-            if ($i < count($chars) - 1) {
-                $nextCh = $chars[$i + 1];
-                $w += ($ch === ' ' || $nextCh === ' ') ? 0 : 1;
-            }
-        }
-        $startCol = max(0, intdiv(53 - $w, 2));
-        $grid = array_fill(0, 7, array_fill(0, 53, 0));
-        $col = $startCol;
-        foreach ($chars as $i => $ch) {
-            $pat = $font3[$ch] ?? ["   ", "   ", "   "];
-            $cw = strlen($pat[0]);
-            for ($r = 0; $r < 3; $r++) {
-                for ($c = 0; $c < $cw; $c++) {
-                    if (isset($pat[$r][$c]) && $pat[$r][$c] === '#' && ($col + $c) < 53) {
-                        $grid[$rowStart + $r][$col + $c] = 1;
-                    }
-                }
-            }
-            $nextCh = $chars[$i + 1] ?? '';
-            $col += $cw + (($ch === ' ' || $nextCh === ' ') ? 0 : 1);
-        }
-        return $grid;
-    };
-
     $p1Grid = $render5("HACK THE PLANET");
     $p2Grid = $render5("ALMIGHTY PUSH");
-    $p3TopGrid = $render3Line("NEVER LET THEM", 0); // Rows 0..2
-    $p3BotGrid = $render3Line("OWN YOUR STORY", 4); // Rows 4..6
+    $p3aGrid = $render5("NEVER LET THEM");
+    $p3bGrid = $render5("OWN YOUR STORY");
 
     // 7-row serpentine sweep:
     // Snake has 8 segments (head s0 + body s1..s7).
@@ -239,7 +186,7 @@ function renderKingCobra(array $days, array $params = []): string
         $sRules[] = ".s{$s} { transform-origin: 8px 8px; animation: cobraMove {$duration}s linear infinite -{$phase}s; }";
     }
 
-    // Contribution cell styling: Authentic -> Cobra Eating -> 3 Sequential Text Frames -> Reset
+    // Contribution cell styling: Authentic -> Cobra Eating -> 4 Sequential Text Frames -> Reset
     $levelColors = [
         0 => "#161b22",
         1 => "#0e4429",
@@ -260,10 +207,9 @@ function renderKingCobra(array $days, array $params = []): string
 
             $inP1 = ($p1Grid[$r][$c] === 1);
             $inP2 = ($p2Grid[$r][$c] === 1);
-            $inP3Top = ($p3TopGrid[$r][$c] === 1);
-            $inP3Bot = ($p3BotGrid[$r][$c] === 1);
-            $inP3 = $inP3Top || $inP3Bot;
-            $hasText = $inP1 || $inP2 || $inP3;
+            $inP3a = ($p3aGrid[$r][$c] === 1);
+            $inP3b = ($p3bGrid[$r][$c] === 1);
+            $hasText = $inP1 || $inP2 || $inP3a || $inP3b;
 
             if ($lvl === 0 && !$hasText) {
                 $cellRects[] = "<rect class='c' x='" . ($c * $cell + 2) . "' y='" . ($r * $cell + 2) . "' width='{$cellSize}' height='{$cellSize}' rx='2.5' ry='2.5' fill='#161b22' opacity='0.35'/>";
@@ -285,32 +231,39 @@ function renderKingCobra(array $days, array $params = []): string
                 $steps[] = "0%, 51.5% { fill: #161b22; opacity: 0.35; }";
             }
 
-            // Frame 1: "HACK THE PLANET" (52% to 66%) - Cyber Matrix Green (with perfected 4-col N)
+            // Frame 1: "HACK THE PLANET" (52% to 62%) - Cyber Matrix Green (with perfected 4-column N)
             if ($inP1) {
-                $steps[] = "52%, 66% { fill: #39d353; opacity: 1; }";
-                $steps[] = "66.8% { fill: #161b22; opacity: 0.35; }";
+                $steps[] = "52%, 62% { fill: #39d353; opacity: 1; }";
+                $steps[] = "62.5% { fill: #161b22; opacity: 0.35; }";
             } else {
-                $steps[] = "52%, 66.8% { fill: #161b22; opacity: 0.35; }";
+                $steps[] = "52%, 62.5% { fill: #161b22; opacity: 0.35; }";
             }
 
-            // Frame 2: "ALMIGHTY PUSH" (67.5% to 81.5%) - Shinra Tensei Electric Cyan
+            // Frame 2: "ALMIGHTY PUSH" (64% to 74%) - Shinra Tensei Electric Cyan
             if ($inP2) {
-                $steps[] = "67.2% { fill: #161b22; opacity: 0.35; }";
-                $steps[] = "67.5%, 81.5% { fill: #00F0FF; opacity: 1; }";
-                $steps[] = "82.2% { fill: #161b22; opacity: 0.35; }";
+                $steps[] = "63.5% { fill: #161b22; opacity: 0.35; }";
+                $steps[] = "64%, 74% { fill: #00F0FF; opacity: 1; }";
+                $steps[] = "74.5% { fill: #161b22; opacity: 0.35; }";
             } else {
-                $steps[] = "67.5%, 82.2% { fill: #161b22; opacity: 0.35; }";
+                $steps[] = "64%, 74.5% { fill: #161b22; opacity: 0.35; }";
             }
 
-            // Frame 3: "NEVER LET THEM OWN YOUR STORY" (83% to 97%) - ALL IN ONE SINGLE FRAME!
-            // Top Line: Cyber Gold (#FFB900), Bottom Line: Matrix Emerald (#39d353)
-            if ($inP3) {
-                $p3Color = $inP3Top ? "#FFB900" : "#39d353";
-                $steps[] = "82.8% { fill: #161b22; opacity: 0.35; }";
-                $steps[] = "83%, 97% { fill: {$p3Color}; opacity: 1; }";
-                $steps[] = "97.5% { fill: #161b22; opacity: 0.35; }";
+            // Frame 3a: "NEVER LET THEM" (76% to 85%) - Cyberpunk Amber Gold
+            if ($inP3a) {
+                $steps[] = "75.5% { fill: #161b22; opacity: 0.35; }";
+                $steps[] = "76%, 85% { fill: #FFB900; opacity: 1; }";
+                $steps[] = "85.5% { fill: #161b22; opacity: 0.35; }";
             } else {
-                $steps[] = "83%, 97.5% { fill: #161b22; opacity: 0.35; }";
+                $steps[] = "76%, 85.5% { fill: #161b22; opacity: 0.35; }";
+            }
+
+            // Frame 3b: "OWN YOUR STORY" (87% to 96%) - King Cobra Neon Emerald
+            if ($inP3b) {
+                $steps[] = "86.5% { fill: #161b22; opacity: 0.35; }";
+                $steps[] = "87%, 96% { fill: #39d353; opacity: 1; }";
+                $steps[] = "96.5% { fill: #161b22; opacity: 0.35; }";
+            } else {
+                $steps[] = "87%, 96.5% { fill: #161b22; opacity: 0.35; }";
             }
 
             // Phase 5: Rebirth & Reset to authentic contribution data

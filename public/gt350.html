@@ -28,70 +28,19 @@
         linear-gradient(to bottom, #05070a 0%, #0a0e17 100%);
     }
 
-    /* Start Overlay if browser restricts autoplay */
-    #startOverlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(5, 7, 10, 0.88);
-      backdrop-filter: blur(12px);
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-      cursor: pointer;
-      animation: pulseGlow 2s infinite ease-in-out;
-    }
-
-    @keyframes pulseGlow {
-      0%, 100% { background: rgba(5, 7, 10, 0.88); }
-      50% { background: rgba(20, 5, 8, 0.92); }
-    }
-
-    .ignite-box {
-      border: 2px solid #e50914;
-      padding: 30px 45px;
-      border-radius: 16px;
-      background: #0d1117;
-      text-align: center;
-      box-shadow: 0 0 50px rgba(229, 9, 20, 0.5), inset 0 0 20px rgba(229, 9, 20, 0.2);
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .ignite-box:hover {
-      transform: scale(1.04);
-      box-shadow: 0 0 70px rgba(229, 9, 20, 0.8);
-    }
-    .ignite-title {
-      font-size: 24px;
-      font-weight: 900;
-      color: #ffffff;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-    }
-    .ignite-sub {
-      font-size: 14px;
-      color: #e50914;
-      letter-spacing: 1px;
-      font-family: monospace;
-    }
-
     .terminal-container {
       width: 100%;
-      max-width: 680px;
+      max-width: 640px;
       background: #0d1117;
       border: 1px solid #30363d;
       border-radius: 14px;
       box-shadow: 0 0 45px rgba(229, 9, 20, 0.25), 0 25px 60px rgba(0,0,0,0.85);
       overflow: hidden;
-      animation: fadeIn 0.8s ease-out;
+      animation: fadeIn 0.5s ease-out;
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(15px); }
+      from { opacity: 0; transform: translateY(12px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
@@ -129,7 +78,7 @@
     }
 
     .terminal-body {
-      padding: 36px 28px;
+      padding: 32px 26px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -140,30 +89,30 @@
       background: rgba(229, 9, 20, 0.15);
       color: #e50914;
       border: 1px solid rgba(229, 9, 20, 0.4);
-      padding: 5px 14px;
+      padding: 4px 12px;
       border-radius: 20px;
       font-size: 11px;
       font-weight: 800;
       letter-spacing: 2px;
       text-transform: uppercase;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
     .track-name {
-      font-size: 38px;
+      font-size: 36px;
       font-weight: 900;
       letter-spacing: -1px;
       color: #ffffff;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       text-transform: uppercase;
       text-shadow: 0 0 25px rgba(229, 9, 20, 0.6);
     }
 
     .artist-name {
-      font-size: 16px;
+      font-size: 15px;
       color: #8b949e;
       font-weight: 500;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
     }
     .artist-name strong {
       color: #00f0ff;
@@ -174,8 +123,8 @@
       display: flex;
       align-items: flex-end;
       gap: 6px;
-      height: 60px;
-      margin-bottom: 30px;
+      height: 52px;
+      margin-bottom: 24px;
       padding: 0 10px;
     }
 
@@ -183,7 +132,7 @@
       width: 7px;
       background: linear-gradient(to top, #e50914, #ff5f56);
       border-radius: 4px 4px 0 0;
-      height: 10px;
+      height: 8px;
       transition: height 0.08s ease;
     }
 
@@ -198,8 +147,42 @@
     .eq-bar:nth-child(6n) { animation-duration: 1.2s; background: linear-gradient(to top, #39d353, #00f0ff); }
 
     @keyframes eqDance {
-      0% { height: 12px; }
-      100% { height: 56px; }
+      0% { height: 8px; }
+      100% { height: 48px; }
+    }
+
+    /* Prominent Call-to-Action Play Bar when autoplay is blocked */
+    .autoplay-notice {
+      display: none;
+      width: 100%;
+      background: rgba(229, 9, 20, 0.12);
+      border: 1px solid #e50914;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      text-align: center;
+      cursor: pointer;
+      animation: pulseBtn 1.8s infinite ease-in-out;
+    }
+    .autoplay-notice.visible {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    @keyframes pulseBtn {
+      0%, 100% { box-shadow: 0 0 15px rgba(229, 9, 20, 0.3); }
+      50% { box-shadow: 0 0 28px rgba(229, 9, 20, 0.7); }
+    }
+    .autoplay-notice span.icon {
+      font-size: 18px;
+      color: #e50914;
+    }
+    .autoplay-notice span.text {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.5px;
     }
 
     /* Player Controls */
@@ -211,8 +194,8 @@
       padding: 16px 20px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      margin-bottom: 24px;
+      gap: 14px;
+      margin-bottom: 22px;
     }
 
     .progress-bar-container {
@@ -240,31 +223,34 @@
       font-family: monospace;
     }
 
-    .playback-buttons {
+    .playback-row {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 20px;
+      justify-content: space-between;
+      gap: 16px;
     }
 
     .play-btn {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
+      min-width: 130px;
+      height: 44px;
+      border-radius: 8px;
       background: #e50914;
       border: none;
       color: white;
-      font-size: 20px;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 8px;
       cursor: pointer;
       transition: all 0.2s ease;
       box-shadow: 0 4px 15px rgba(229, 9, 20, 0.5);
     }
     .play-btn:hover {
       background: #b80710;
-      transform: scale(1.08);
+      transform: translateY(-1px);
       box-shadow: 0 6px 20px rgba(229, 9, 20, 0.7);
     }
 
@@ -272,10 +258,12 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 13px;
+      font-size: 12px;
       color: #8b949e;
+      font-family: monospace;
     }
     .vol-slider {
+      width: 100px;
       accent-color: #e50914;
       cursor: pointer;
     }
@@ -283,7 +271,7 @@
     .controls-footer {
       display: flex;
       flex-wrap: wrap;
-      gap: 14px;
+      gap: 12px;
       justify-content: center;
       width: 100%;
     }
@@ -292,8 +280,8 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 12px 22px;
-      border-radius: 8px;
+      padding: 10px 18px;
+      border-radius: 6px;
       font-size: 13px;
       font-weight: 700;
       text-decoration: none;
@@ -309,7 +297,7 @@
     .btn-primary:hover {
       background: #2ea043;
       transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(46, 160, 67, 0.4);
+      box-shadow: 0 4px 12px rgba(46, 160, 67, 0.4);
     }
 
     .btn-secondary {
@@ -324,7 +312,7 @@
     }
 
     .footer-status {
-      margin-top: 24px;
+      margin-top: 20px;
       font-size: 12px;
       color: #484f58;
       font-family: monospace;
@@ -336,14 +324,6 @@
   </style>
 </head>
 <body>
-
-  <!-- Fullscreen Tap-to-Ignite overlay if browser blocks autoplay -->
-  <div id="startOverlay" onclick="forcePlay()">
-    <div class="ignite-box">
-      <div class="ignite-title">⚡ ENGAGE GT350 PROTOCOL ⚡</div>
-      <div class="ignite-sub">CLICK ANYWHERE TO FIRE UP AUDIO (8250 RPM)</div>
-    </div>
-  </div>
 
   <div class="terminal-container">
     <div class="terminal-header">
@@ -383,6 +363,12 @@
         <div class="eq-bar"></div>
       </div>
 
+      <!-- Prominent Fallback Button if browser blocks autoplay -->
+      <div class="autoplay-notice" id="autoplayNotice" onclick="togglePlay()">
+        <span class="icon">▶</span>
+        <span class="text">CLICK TO START PLAYBACK (GT350)</span>
+      </div>
+
       <!-- Native HTML5 Audio -->
       <audio id="audioPlayer" src="gt350.mp3" preload="auto" loop></audio>
 
@@ -396,18 +382,23 @@
           <span id="durTime">--:--</span>
         </div>
 
-        <div class="playback-buttons">
-          <button class="play-btn" id="playBtn" onclick="togglePlay()">❚❚</button>
+        <div class="playback-row">
+          <button class="play-btn" id="playBtn" onclick="togglePlay()">
+            <span id="playIcon">❚❚</span>
+            <span id="playLabel">PAUSE</span>
+          </button>
+          
           <div class="vol-control">
-            <span>VOL</span>
+            <span id="volIcon">🔊</span>
             <input type="range" class="vol-slider" min="0" max="1" step="0.05" value="0.9" oninput="setVol(this.value)">
+            <span id="volVal">90%</span>
           </div>
         </div>
       </div>
 
       <div class="controls-footer">
-        <a href="https://github.com/xploitoverload" target="_blank" class="btn btn-primary">
-          <span>⏎</span> Open GitHub Profile in New Tab
+        <a href="https://github.com/xploitoverload" class="btn btn-primary">
+          <span>⏎</span> Return to GitHub Profile
         </a>
         <a href="https://open.spotify.com/search/Jake%20Hill%20GT350" target="_blank" class="btn btn-secondary">
           <span>♫</span> Spotify
@@ -415,7 +406,7 @@
       </div>
 
       <div class="footer-status">
-        [RING_0_AUDIO_STREAM] &bull; STATUS: <span id="statusText">PLAYING // 8250 RPM</span>
+        [RING_0_AUDIO_STREAM] &bull; STATUS: <span id="statusText">INITIALIZING...</span>
       </div>
     </div>
   </div>
@@ -423,12 +414,16 @@
   <script>
     const audio = document.getElementById('audioPlayer');
     const playBtn = document.getElementById('playBtn');
+    const playIcon = document.getElementById('playIcon');
+    const playLabel = document.getElementById('playLabel');
     const progressBar = document.getElementById('progressBar');
     const currTime = document.getElementById('currTime');
     const durTime = document.getElementById('durTime');
     const statusText = document.getElementById('statusText');
-    const overlay = document.getElementById('startOverlay');
+    const autoplayNotice = document.getElementById('autoplayNotice');
     const eqBars = document.querySelectorAll('.eq-bar');
+    const volVal = document.getElementById('volVal');
+    const volIcon = document.getElementById('volIcon');
 
     function formatTime(s) {
       if (isNaN(s)) return '0:00';
@@ -444,51 +439,56 @@
       });
     }
 
-    function attemptAutoplay() {
-      audio.volume = 0.9;
-      const promise = audio.play();
-      if (promise !== undefined) {
-        promise.then(() => {
-          // Autoplay started successfully!
-          playBtn.innerHTML = '❚❚';
-          setVisualizerActive(true);
-          statusText.innerHTML = 'PLAYING // 8250 RPM';
-          overlay.style.display = 'none';
-        }).catch(() => {
-          // Browser blocked autoplay without user gesture -> Show one-click overlay
-          playBtn.innerHTML = '▶';
-          setVisualizerActive(false);
-          statusText.innerHTML = 'AWAITING USER ENGAGEMENT';
-          overlay.style.display = 'flex';
-        });
-      }
-    }
-
-    function forcePlay() {
-      overlay.style.display = 'none';
-      audio.play().then(() => {
-        playBtn.innerHTML = '❚❚';
+    function updatePlayState(isPlaying) {
+      if (isPlaying) {
+        playIcon.textContent = '❚❚';
+        playLabel.textContent = 'PAUSE';
         setVisualizerActive(true);
         statusText.innerHTML = 'PLAYING // 8250 RPM';
-      });
-    }
-
-    function togglePlay() {
-      if (audio.paused) {
-        audio.play();
-        playBtn.innerHTML = '❚❚';
-        setVisualizerActive(true);
-        statusText.innerHTML = 'PLAYING // 8250 RPM';
+        autoplayNotice.classList.remove('visible');
       } else {
-        audio.pause();
-        playBtn.innerHTML = '▶';
+        playIcon.textContent = '▶';
+        playLabel.textContent = 'PLAY';
         setVisualizerActive(false);
         statusText.innerHTML = 'PAUSED';
       }
     }
 
+    function attemptAutoplay() {
+      audio.volume = 0.9;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          updatePlayState(true);
+        }).catch(() => {
+          // Browser blocked autoplay due to autoplay policy
+          updatePlayState(false);
+          statusText.innerHTML = 'READY &bull; CLICK TO PLAY';
+          autoplayNotice.classList.add('visible');
+        });
+      }
+    }
+
+    function togglePlay() {
+      if (audio.paused) {
+        audio.play().then(() => {
+          updatePlayState(true);
+        }).catch(err => {
+          console.warn('Playback error:', err);
+        });
+      } else {
+        audio.pause();
+        updatePlayState(false);
+      }
+    }
+
     function setVol(val) {
       audio.volume = val;
+      const pct = Math.round(val * 100);
+      volVal.textContent = pct + '%';
+      if (pct === 0) volIcon.textContent = '🔇';
+      else if (pct < 50) volIcon.textContent = '🔉';
+      else volIcon.textContent = '🔊';
     }
 
     audio.addEventListener('timeupdate', () => {
@@ -512,14 +512,12 @@
       audio.currentTime = (clickX / width) * audio.duration;
     }
 
-    // Try autoplay on load
-    window.addEventListener('load', attemptAutoplay);
-    // Also try on first click anywhere on document
-    document.addEventListener('click', () => {
-      if (audio.paused && overlay.style.display !== 'none') {
-        forcePlay();
-      }
-    }, { once: true });
+    // Attempt playback immediately when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', attemptAutoplay);
+    } else {
+      attemptAutoplay();
+    }
   </script>
 </body>
 </html>

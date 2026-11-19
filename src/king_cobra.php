@@ -9,6 +9,14 @@ declare(strict_types=1);
  * with zero vertical wobble, eating and completely emptying every single active contribution box
  * until the entire board is 100% cleared.
  *
+ * Once the board is completely emptied, the contribution cells themselves light up as a glowing
+ * digital LED dot-matrix display, sequentially spelling out:
+ * 1. "HACK THE PLANET" (Matrix Cyber Green)
+ * 2. "ALMIGHTY PUSH" (Shinra Tensei Electric Cyan)
+ * 3. "NEVER LET THEM" (Cyberpunk Amber Gold)
+ * 4. "OWN YOUR STORY" (King Cobra Neon Emerald)
+ * Before cleanly replenishing back to authentic contributions for the next cycle.
+ *
  * @param array<int,array{date:string,count:int,level:int}> $days Array of daily contributions
  * @param array<string,mixed> $params Options
  * @return string Full SVG XML string
@@ -22,11 +30,71 @@ function renderKingCobra(array $days, array $params = []): string
 
     $svgWidth = 890;
     $svgHeight = 175;
-    $duration = 24.0; // 24 seconds per complete sweep
+    $duration = 32.0; // 32 seconds total cycle (16s cobra prowl + 16s sequential text)
 
-    // Orthogonal 7-row serpentine sweep:
+    // Dot-matrix pixel font (5 rows high: rows 1 to 5, centered vertically)
+    $font = [
+        'A' => ["###", "# #", "###", "# #", "# #"],
+        'C' => ["###", "#  ", "#  ", "#  ", "###"],
+        'E' => ["###", "#  ", "## ", "#  ", "###"],
+        'G' => ["###", "#  ", "# #", "# #", "###"],
+        'H' => ["# #", "# #", "###", "# #", "# #"],
+        'I' => ["#", "#", "#", "#", "#"],
+        'K' => ["# #", "## ", "#  ", "## ", "# #"],
+        'L' => ["#  ", "#  ", "#  ", "#  ", "###"],
+        'M' => ["#  #", "####", "#  #", "#  #", "#  #"],
+        'N' => ["#  #", "## #", "# ##", "#  #", "#  #"],
+        'O' => ["###", "# #", "# #", "# #", "###"],
+        'P' => ["###", "# #", "###", "#  ", "#  "],
+        'R' => ["###", "# #", "###", "## ", "# #"],
+        'S' => ["###", "#  ", "###", "  #", "###"],
+        'T' => ["###", " # ", " # ", " # ", " # "],
+        'U' => ["# #", "# #", "# #", "# #", "###"],
+        'V' => ["# #", "# #", "# #", "# #", " # "],
+        'W' => ["#   #", "#   #", "# # #", "## ##", "#   #"],
+        'Y' => ["# #", "# #", "###", " # ", " # "],
+        ' ' => ["  ", "  ", "  ", "  ", "  "],
+    ];
+
+    $renderMatrixText = function (string $text, bool $nIs3 = false) use ($font): array {
+        $n3 = ["## ", "# #", "# #", "# #", " ##"];
+        $chars = str_split(strtoupper($text));
+        $w = 0;
+        foreach ($chars as $i => $ch) {
+            $pat = ($ch === 'N' && $nIs3) ? $n3 : ($font[$ch] ?? ["   ", "   ", "   ", "   ", "   "]);
+            $w += strlen($pat[0]);
+            if ($i < count($chars) - 1) {
+                $nextCh = $chars[$i + 1];
+                $w += ($ch === ' ' || $nextCh === ' ') ? 0 : 1;
+            }
+        }
+        $startCol = max(0, intdiv(53 - $w, 2));
+        $grid = array_fill(0, 7, array_fill(0, 53, 0));
+        $col = $startCol;
+        foreach ($chars as $i => $ch) {
+            $pat = ($ch === 'N' && $nIs3) ? $n3 : ($font[$ch] ?? ["   ", "   ", "   ", "   ", "   "]);
+            $cw = strlen($pat[0]);
+            for ($r = 0; $r < 5; $r++) {
+                for ($c = 0; $c < $cw; $c++) {
+                    if (isset($pat[$r][$c]) && $pat[$r][$c] === '#' && ($col + $c) < 53) {
+                        $grid[$r + 1][$col + $c] = 1;
+                    }
+                }
+            }
+            $nextCh = $chars[$i + 1] ?? '';
+            $col += $cw + (($ch === ' ' || $nextCh === ' ') ? 0 : 1);
+        }
+        return $grid;
+    };
+
+    $p1Grid = $renderMatrixText("HACK THE PLANET", true);
+    $p2Grid = $renderMatrixText("ALMIGHTY PUSH", false);
+    $p3aGrid = $renderMatrixText("NEVER LET THEM", false);
+    $p3bGrid = $renderMatrixText("OWN YOUR STORY", false);
+
+    // 7-row serpentine sweep:
     // Snake has 8 segments (head s0 + body s1..s7).
-    // Approach: head starts at (-8 * cell, 0) and glides into col 0 along row 0.
+    // Approach along row 0, sweep rows 0..6, then full exit off row 6.
     $pathSegments = [
         // Approach row 0
         [-8 * $cell, 0, 0, 0, 0],
@@ -50,7 +118,7 @@ function renderKingCobra(array $days, array $params = []): string
         [0, 5 * $cell, 0, 6 * $cell, 90],
         // Row 6: right (cols 0 -> 52)
         [0, 6 * $cell, 52 * $cell, 6 * $cell, 0],
-        // Exit off right edge of row 6
+        // Exit completely off right edge of row 6 (tail clears arena)
         [52 * $cell, 6 * $cell, 60 * $cell, 6 * $cell, 0],
     ];
 
@@ -59,8 +127,8 @@ function renderKingCobra(array $days, array $params = []): string
         $activeDist += abs($seg[2] - $seg[0]) + abs($seg[3] - $seg[1]);
     }
 
-    // 92% active sweep time, 8% loop reset interval
-    $totalDist = $activeDist / 0.92;
+    // 50% of cycle is active cobra prowl, 50% is sequential text display
+    $totalDist = $activeDist / 0.50;
 
     $timedSegments = [];
     $cum = 0.0;
@@ -105,13 +173,13 @@ function renderKingCobra(array $days, array $params = []): string
         $kfLines[] = "  {$seg['t1']}% { transform: translate({$x1}px, {$y1}px) {$rot}; }";
         $kfLines[] = "  {$seg['t2']}% { transform: translate({$x2}px, {$y2}px) {$rot}; }";
     }
-    // Hold offscreen during reset
-    $kfLines[] = "  92.1%, 100% { transform: translate(-128px, 0px) rotate(0deg); }";
+    // Parked offscreen while digital text spells out
+    $kfLines[] = "  50.1%, 100% { transform: translate(-128px, 0px) rotate(0deg); }";
     $kfLines[] = "}";
     $cobraMoveKf = implode("\n", $kfLines);
 
     // Follow-the-leader animation delay for 8 body segments
-    $stepTime = ($duration * 0.92) / (float) ($activeDist / $cell);
+    $stepTime = ($duration * 0.50) / (float) ($activeDist / $cell);
     $numSegments = 8;
     $sRules = [];
     for ($s = 0; $s < $numSegments; $s++) {
@@ -119,7 +187,7 @@ function renderKingCobra(array $days, array $params = []): string
         $sRules[] = ".s{$s} { transform-origin: 8px 8px; animation: cobraMove {$duration}s linear infinite -{$phase}s; }";
     }
 
-    // Contribution cell styling: 100% eating and emptying
+    // Contribution cell styling: Authentic -> Cobra Eating -> 4 Sequential Text Messages -> Reset
     $levelColors = [
         0 => "#161b22",
         1 => "#0e4429",
@@ -130,35 +198,91 @@ function renderKingCobra(array $days, array $params = []): string
 
     $cellCss = [];
     $cellRects = [];
-    foreach ($days as $i => $d) {
-        $col = intdiv($i, 7);
-        $row = $i % 7;
-        if ($col > 52) {
-            break;
-        }
-        $cx = $col * $cell;
-        $cy = $row * $cell;
-        $lvl = intval($d['level'] ?? 0);
-        $cid = "c_{$col}_{$row}";
+    for ($c = 0; $c < 53; $c++) {
+        for ($r = 0; $r < 7; $r++) {
+            $cid = "c_{$c}_{$r}";
+            $idx = $c * 7 + $r;
+            $d = $days[$idx] ?? [];
+            $lvl = intval($d['level'] ?? 0);
+            $activeColor = $levelColors[$lvl] ?? "#161b22";
 
-        if ($lvl > 0) {
-            $tEat = $cellEatTimes["{$col}_{$row}"] ?? 50.0;
-            $tFlash = round(min(100.0, $tEat + 0.12), 2);
-            $tEmpty = round(min(100.0, $tEat + 0.35), 2);
-            $activeColor = $levelColors[$lvl] ?? "#006d32";
+            $inP1 = ($p1Grid[$r][$c] === 1);
+            $inP2 = ($p2Grid[$r][$c] === 1);
+            $inP3a = ($p3aGrid[$r][$c] === 1);
+            $inP3b = ($p3bGrid[$r][$c] === 1);
+            $hasText = $inP1 || $inP2 || $inP3a || $inP3b;
 
+            if ($lvl === 0 && !$hasText) {
+                $cellRects[] = "<rect class='c' x='" . ($c * $cell + 2) . "' y='" . ($r * $cell + 2) . "' width='{$cellSize}' height='{$cellSize}' rx='2.5' ry='2.5' fill='#161b22' opacity='0.35'/>";
+                continue;
+            }
+
+            // Build keyframe timeline
+            $steps = [];
+
+            // Phase 1: Contribution eating & emptying (0% to 50%)
+            if ($lvl > 0) {
+                $tEat = $cellEatTimes["{$c}_{$r}"] ?? 25.0;
+                $tFlash = round(min(50.0, $tEat + 0.12), 2);
+                $tEmpty = round(min(50.0, $tEat + 0.35), 2);
+                $steps[] = "0%, {$tEat}% { fill: {$activeColor}; opacity: 1; }";
+                $steps[] = "{$tFlash}% { fill: #56ff78; opacity: 1; }";
+                $steps[] = "{$tEmpty}%, 51.5% { fill: #161b22; opacity: 0.35; }";
+            } else {
+                $steps[] = "0%, 51.5% { fill: #161b22; opacity: 0.35; }";
+            }
+
+            // Phase 2: "HACK THE PLANET" (52% to 62%) - Cyber Matrix Green
+            if ($inP1) {
+                $steps[] = "52%, 62% { fill: #39d353; opacity: 1; }";
+                $steps[] = "62.5% { fill: #161b22; opacity: 0.35; }";
+            } else {
+                $steps[] = "52%, 62.5% { fill: #161b22; opacity: 0.35; }";
+            }
+
+            // Phase 3: "ALMIGHTY PUSH" (64% to 74%) - Shinra Tensei Electric Cyan
+            if ($inP2) {
+                $steps[] = "63.5% { fill: #161b22; opacity: 0.35; }";
+                $steps[] = "64%, 74% { fill: #00F0FF; opacity: 1; }";
+                $steps[] = "74.5% { fill: #161b22; opacity: 0.35; }";
+            } else {
+                $steps[] = "64%, 74.5% { fill: #161b22; opacity: 0.35; }";
+            }
+
+            // Phase 4a: "NEVER LET THEM" (76% to 85%) - Cyberpunk Amber Gold
+            if ($inP3a) {
+                $steps[] = "75.5% { fill: #161b22; opacity: 0.35; }";
+                $steps[] = "76%, 85% { fill: #FFB900; opacity: 1; }";
+                $steps[] = "85.5% { fill: #161b22; opacity: 0.35; }";
+            } else {
+                $steps[] = "76%, 85.5% { fill: #161b22; opacity: 0.35; }";
+            }
+
+            // Phase 4b: "OWN YOUR STORY" (87% to 96%) - King Cobra Neon Emerald
+            if ($inP3b) {
+                $steps[] = "86.5% { fill: #161b22; opacity: 0.35; }";
+                $steps[] = "87%, 96% { fill: #39d353; opacity: 1; }";
+                $steps[] = "96.5% { fill: #161b22; opacity: 0.35; }";
+            } else {
+                $steps[] = "87%, 96.5% { fill: #161b22; opacity: 0.35; }";
+            }
+
+            // Phase 5: Rebirth & Reset to authentic contribution data
+            $steps[] = "99.4% { fill: #161b22; opacity: 0.35; }";
+            if ($lvl > 0) {
+                $steps[] = "100% { fill: {$activeColor}; opacity: 1; }";
+            } else {
+                $steps[] = "100% { fill: #161b22; opacity: 0.35; }";
+            }
+
+            $kfStr = implode("\n        ", $steps);
             $cellCss[] = "
             @keyframes kf_{$cid} {
-                0%, {$tEat}% { fill: {$activeColor}; opacity: 1; }
-                {$tFlash}% { fill: #56ff78; opacity: 1; }
-                {$tEmpty}%, 99.4% { fill: #161b22; opacity: 0.35; }
-                100% { fill: {$activeColor}; opacity: 1; }
+        {$kfStr}
             }
             .{$cid} { fill: {$activeColor}; animation: kf_{$cid} {$duration}s linear infinite; }
             ";
-            $cellRects[] = "<rect class='c {$cid}' x='" . ($cx + 2) . "' y='" . ($cy + 2) . "' width='{$cellSize}' height='{$cellSize}' rx='2.5' ry='2.5'/>";
-        } else {
-            $cellRects[] = "<rect class='c' x='" . ($cx + 2) . "' y='" . ($cy + 2) . "' width='{$cellSize}' height='{$cellSize}' rx='2.5' ry='2.5' fill='#161b22' opacity='0.35'/>";
+            $cellRects[] = "<rect class='c {$cid}' x='" . ($c * $cell + 2) . "' y='" . ($r * $cell + 2) . "' width='{$cellSize}' height='{$cellSize}' rx='2.5' ry='2.5'/>";
         }
     }
 

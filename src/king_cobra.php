@@ -143,18 +143,18 @@ function renderKingCobra(array $days, array $params = []): string
 
         if ($lvl > 0) {
             $tEat = $cellEatTimes["{$col}_{$row}"] ?? 50.0;
-            $tFlash = round(min(100.0, $tEat + 0.1), 2);
-            $tEmpty = round($tFlash + 0.05, 2);
+            $tFlash = round(min(100.0, $tEat + 0.12), 2);
+            $tEmpty = round(min(100.0, $tEat + 0.35), 2);
             $activeColor = $levelColors[$lvl] ?? "#006d32";
 
             $cellCss[] = "
             @keyframes kf_{$cid} {
                 0%, {$tEat}% { fill: {$activeColor}; opacity: 1; }
-                {$tFlash}% { fill: #39d353; opacity: 1; }
+                {$tFlash}% { fill: #56ff78; opacity: 1; }
                 {$tEmpty}%, 99.4% { fill: #161b22; opacity: 0.35; }
                 100% { fill: {$activeColor}; opacity: 1; }
             }
-            .{$cid} { fill: {$activeColor}; animation: kf_{cid} {$duration}s linear infinite; }
+            .{$cid} { fill: {$activeColor}; animation: kf_{$cid} {$duration}s linear infinite; }
             ";
             $cellRects[] = "<rect class='c {$cid}' x='" . ($cx + 2) . "' y='" . ($cy + 2) . "' width='{$cellSize}' height='{$cellSize}' rx='2.5' ry='2.5'/>";
         } else {

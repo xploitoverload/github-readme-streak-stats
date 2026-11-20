@@ -140,7 +140,7 @@
     </div>
 
     <div class="hint">
-      [BACKGROUND_AUDIO: 0x0 OFF-SCREEN] &bull; AUTO-LAUNCHING...
+      [BACKGROUND_AUDIO: 1x1 CORNER] &bull; AUTO-LAUNCHING...
     </div>
   </div>
 
@@ -155,14 +155,8 @@
         return popupWin;
       }
 
-      // Invisible / 0 size window positioned completely off-screen
-      const width = 0;
-      const height = 0;
-      const left = 9999;
-      const top = 9999;
-
-      // Off-screen minimal window so it never obstructs the profile
-      const features = `width=${width},height=${height},left=${left},top=${top},scrollbars=no,resizable=no`;
+      // Tiny 1x1 window in top-left corner (0,0) so it never blocks the profile
+      const features = 'width=1,height=1,left=0,top=0,scrollbars=no,resizable=no';
       popupWin = window.open(url, 'perfectWindow', features);
 
       // Keep this profile/parent window on TOP!

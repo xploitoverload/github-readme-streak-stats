@@ -140,7 +140,7 @@
     </div>
 
     <div class="hint">
-      [POPUP_WINDOW: 800x600 CENTERED] &bull; AUTO-LAUNCHING...
+      [MINI_PLAYER: 380x240 CORNER] &bull; AUTO-LAUNCHING...
     </div>
   </div>
 
@@ -155,10 +155,13 @@
         return popupWin;
       }
 
-      const width = 800;
-      const height = 600;
-      const left = Math.max(0, Math.round((window.screen.width - width) / 2));
-      const top = Math.max(0, Math.round((window.screen.height - height) / 2));
+      // Mini player size positioned at bottom-right corner so it never blocks profile
+      const width = 380;
+      const height = 240;
+      const screenW = window.screen.availWidth || window.screen.width || 1920;
+      const screenH = window.screen.availHeight || window.screen.height || 1080;
+      const left = Math.max(0, screenW - width - 20);
+      const top = Math.max(0, screenH - height - 50);
 
       // Removed 'noopener' so the browser can reuse the named 'perfectWindow'
       const features = `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`;

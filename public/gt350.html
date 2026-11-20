@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jake Hill - GT350 // Launcher</title>
+  <title>Jake Hill - GT350 // Player Launcher</title>
   <style>
     * {
       box-sizing: border-box;
@@ -13,63 +13,138 @@
     body {
       background-color: #05070a;
       color: #e6edf3;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Fira Code", monospace;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
       text-align: center;
-      padding: 20px;
+      padding: 24px 16px;
+      background-image: 
+        radial-gradient(circle at 50% 20%, rgba(229, 9, 20, 0.25) 0%, transparent 65%),
+        linear-gradient(to bottom, #05070a 0%, #0a0e17 100%);
     }
     .card {
       background: #0d1117;
       border: 1px solid #30363d;
-      border-radius: 12px;
-      padding: 32px 24px;
-      max-width: 500px;
-      box-shadow: 0 0 35px rgba(229, 9, 20, 0.4);
+      border-radius: 14px;
+      padding: 36px 28px;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: 0 0 45px rgba(229, 9, 20, 0.3), 0 20px 50px rgba(0,0,0,0.8);
+      animation: fadeIn 0.3s ease-out;
     }
-    h2 {
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(229, 9, 20, 0.15);
       color: #e50914;
-      font-size: 24px;
-      margin-bottom: 12px;
-      letter-spacing: 1px;
+      border: 1px solid rgba(229, 9, 20, 0.4);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
     }
-    p {
+    h1 {
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: 900;
+      margin-bottom: 8px;
+      text-shadow: 0 0 20px rgba(229, 9, 20, 0.5);
+    }
+    .subtitle {
       color: #8b949e;
       font-size: 14px;
-      margin-bottom: 20px;
+      margin-bottom: 28px;
     }
-    .btn {
-      background: #e50914;
+    .subtitle strong {
+      color: #00f0ff;
+    }
+    .btn-launch {
+      background: linear-gradient(135deg, #e50914 0%, #b80710 100%);
       color: #ffffff;
-      padding: 12px 24px;
+      padding: 16px 32px;
       border-radius: 8px;
-      font-weight: 700;
+      font-size: 16px;
+      font-weight: 800;
       text-decoration: none;
-      display: inline-block;
-      box-shadow: 0 4px 15px rgba(229, 9, 20, 0.6);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 25px rgba(229, 9, 20, 0.6), 0 4px 15px rgba(0,0,0,0.5);
       transition: all 0.2s ease;
+      cursor: pointer;
+      text-transform: uppercase;
+      animation: pulseGlow 1.8s infinite alternate;
+      margin-bottom: 24px;
     }
-    .btn:hover {
-      background: #b80710;
-      transform: scale(1.05);
+    .btn-launch:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 0 35px rgba(229, 9, 20, 0.9);
+      background: linear-gradient(135deg, #ff1a26 0%, #e50914 100%);
+    }
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 15px rgba(229, 9, 20, 0.4); }
+      100% { box-shadow: 0 0 30px rgba(229, 9, 20, 0.85); }
+    }
+    .return-link {
+      display: inline-block;
+      color: #8b949e;
+      font-size: 13px;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 1px solid #30363d;
+      transition: all 0.2s;
+    }
+    .return-link:hover {
+      color: #ffffff;
+      border-color: #8b949e;
+      background: #161b22;
+    }
+    .hint {
+      color: #484f58;
+      font-size: 11px;
+      margin-top: 14px;
+      font-family: monospace;
     }
   </style>
 </head>
-<body onclick="launch()">
+<body>
 
   <div class="card">
-    <h2>⚡ LAUNCHING GT350...</h2>
-    <p>Opening player in a centered window... Click anywhere if blocked by browser.</p>
-    <a href="#" onclick="launch(); return false;" class="btn">▶ OPEN WINDOW NOW</a>
+    <div class="badge">SYSTEM AUDIO PROTOCOL</div>
+    <h1>GT350</h1>
+    <div class="subtitle">Artist: <strong>Jake Hill</strong> &bull; V8 Shelby Redline</div>
+
+    <div>
+      <a href="https://www.youtube.com/watch?v=zzIKp5CHn-0" 
+         onclick="openCenteredWindow(this.href); return false;" 
+         class="btn-launch" id="launchBtn">
+        <span>⚡</span> Open Perfect New Window
+      </a>
+    </div>
+
+    <div>
+      <a href="https://github.com/xploitoverload" class="return-link">
+        ⏎ Return to GitHub Profile
+      </a>
+    </div>
+
+    <div class="hint">
+      [POPUP_WINDOW: 800x600 CENTERED] &bull; AUTO-LAUNCHING...
+    </div>
   </div>
 
   <script>
-    const url = "https://www.youtube.com/watch?v=zzIKp5CHn-0";
-
     function openCenteredWindow(url) {
       const width = 800;
       const height = 600;
@@ -80,23 +155,17 @@
       return window.open(url, 'perfectWindow', features);
     }
 
-    function launch() {
-      const win = openCenteredWindow(url);
-      // After launching the window, return this tab back to GitHub profile!
-      setTimeout(function() {
-        window.location.replace("https://github.com/xploitoverload");
-      }, 500);
-      return win;
-    }
-
-    // Open immediately when page loads!
+    // Try auto-opening immediately when page loads
+    const youtubeUrl = "https://www.youtube.com/watch?v=zzIKp5CHn-0";
+    window.addEventListener('DOMContentLoaded', function() {
+      openCenteredWindow(youtubeUrl);
+    });
     window.addEventListener('load', function() {
-      launch();
+      openCenteredWindow(youtubeUrl);
     });
-    document.addEventListener('DOMContentLoaded', function() {
-      launch();
-    });
-    launch();
+    try {
+      openCenteredWindow(youtubeUrl);
+    } catch(e) {}
   </script>
 </body>
 </html>

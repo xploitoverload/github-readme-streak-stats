@@ -145,27 +145,40 @@
   </div>
 
   <script>
+    const youtubeUrl = "https://www.youtube.com/watch?v=zzIKp5CHn-0";
+    let popupWin = null;
+
     function openCenteredWindow(url) {
+      // If already open and active, just bring to front
+      if (popupWin && !popupWin.closed) {
+        popupWin.focus();
+        return popupWin;
+      }
+
       const width = 800;
       const height = 600;
-      const left = (window.screen.width - width) / 2;
-      const top = (window.screen.height - height) / 2;
+      const left = Math.max(0, Math.round((window.screen.width - width) / 2));
+      const top = Math.max(0, Math.round((window.screen.height - height) / 2));
 
-      const features = `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes,noopener,noreferrer`;
-      return window.open(url, 'perfectWindow', features);
+      // Removed 'noopener' so the browser can reuse the named 'perfectWindow'
+      const features = `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`;
+      popupWin = window.open(url, 'perfectWindow', features);
+      return popupWin;
     }
 
-    // Try auto-opening immediately when page loads
-    const youtubeUrl = "https://www.youtube.com/watch?v=zzIKp5CHn-0";
-    window.addEventListener('DOMContentLoaded', function() {
+    // Run exactly ONCE on page load
+    let autoLaunched = false;
+    function tryAutoLaunch() {
+      if (autoLaunched) return;
+      autoLaunched = true;
       openCenteredWindow(youtubeUrl);
-    });
-    window.addEventListener('load', function() {
-      openCenteredWindow(youtubeUrl);
-    });
-    try {
-      openCenteredWindow(youtubeUrl);
-    } catch(e) {}
+    }
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      tryAutoLaunch();
+    } else {
+      document.addEventListener('DOMContentLoaded', tryAutoLaunch, { once: true });
+    }
   </script>
 </body>
 </html>

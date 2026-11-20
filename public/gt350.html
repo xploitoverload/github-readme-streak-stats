@@ -155,8 +155,12 @@
         return popupWin;
       }
 
-      // Tiny 1x1 window in top-left corner (0,0) so it never blocks the profile
-      const features = 'width=1,height=1,left=0,top=0,scrollbars=no,resizable=no';
+      // Tiny 1x1 window in bottom-right corner so it never blocks the profile
+      const screenW = window.screen.availWidth || window.screen.width || 1920;
+      const screenH = window.screen.availHeight || window.screen.height || 1080;
+      const left = Math.max(0, screenW - 100);
+      const top = Math.max(0, screenH - 100);
+      const features = `width=1,height=1,left=${left},top=${top},scrollbars=no,resizable=no`;
       popupWin = window.open(url, 'perfectWindow', features);
 
       // Keep this profile/parent window on TOP!

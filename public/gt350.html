@@ -126,7 +126,7 @@
     <div class="subtitle">Artist: <strong>Jake Hill</strong> &bull; V8 Shelby Redline</div>
 
     <div>
-      <a href="https://www.youtube.com/watch?v=zzIKp5CHn-0" 
+      <a href="https://www.youtube.com/watch?v=zzIKp5CHn-0&autoplay=1" 
          onclick="openCenteredWindow(this.href); return false;" 
          class="btn-launch" id="launchBtn">
         <span>⚡</span> Open Perfect New Window
@@ -145,7 +145,7 @@
   </div>
 
   <script>
-    const youtubeUrl = "https://www.youtube.com/watch?v=zzIKp5CHn-0";
+    const youtubeUrl = "https://www.youtube.com/watch?v=zzIKp5CHn-0&autoplay=1";
     let popupWin = null;
 
     function openCenteredWindow(url) {
@@ -163,6 +163,20 @@
       // Removed 'noopener' so the browser can reuse the named 'perfectWindow'
       const features = `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`;
       popupWin = window.open(url, 'perfectWindow', features);
+
+      // Keep this profile/parent window on TOP!
+      if (popupWin) {
+        try { popupWin.blur(); } catch(e) {}
+        window.focus();
+
+        [50, 150, 300, 600].forEach(delay => {
+          setTimeout(() => {
+            try { popupWin.blur(); } catch(e) {}
+            window.focus();
+          }, delay);
+        });
+      }
+
       return popupWin;
     }
 
